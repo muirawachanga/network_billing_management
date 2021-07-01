@@ -1,6 +1,6 @@
 ## Network Billing System
 
-A complete biling system integrated with pfsense.
+A complete billing system integrated with pfsense
 
 #### License
 

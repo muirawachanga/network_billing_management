@@ -2,8 +2,8 @@ from . import __version__ as app_version
 
 app_name = "network_billing_system"
 app_title = "Network Billing System"
-app_publisher = "Stephen"
-app_description = "A complete biling system integrated with pfsense."
+app_publisher = "stephen"
+app_description = "A complete billing system integrated with pfsense"
 app_icon = "octicon octicon-file-directory"
 app_color = "yellow"
 app_email = "wachangasteve@gmail.com"

@@ -9,8 +9,8 @@ from network_billing_system import __version__ as version
 setup(
 	name='network_billing_system',
 	version=version,
-	description='A complete biling system integrated with pfsense.',
-	author='Stephen',
+	description='A complete billing system integrated with pfsense',
+	author='stephen',
 	author_email='wachangasteve@gmail.com',
 	packages=find_packages(),
 	zip_safe=False,
