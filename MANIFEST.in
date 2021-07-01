@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include network_billing_system *.css
+recursive-include network_billing_system *.csv
+recursive-include network_billing_system *.html
+recursive-include network_billing_system *.ico
+recursive-include network_billing_system *.js
+recursive-include network_billing_system *.json
+recursive-include network_billing_system *.md
+recursive-include network_billing_system *.png
+recursive-include network_billing_system *.py
+recursive-include network_billing_system *.svg
+recursive-include network_billing_system *.txt
+recursive-exclude network_billing_system *.pyc
