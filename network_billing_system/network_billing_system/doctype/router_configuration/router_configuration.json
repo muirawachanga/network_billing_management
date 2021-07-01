@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "autoname": "ROUTER.#####",
+ "creation": "2021-07-01 12:06:11.882327",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "router_name",
+  "router_model",
+  "column_break_3",
+  "mode",
+  "static_ip_address"
+ ],
+ "fields": [
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "\nStatic IP Address\nPPOE"
+  },
+  {
+   "fieldname": "static_ip_address",
+   "fieldtype": "Data",
+   "label": "Static Ip Address"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "router_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Router Name"
+  },
+  {
+   "fieldname": "router_model",
+   "fieldtype": "Data",
+   "label": "Router Model"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-07-01 12:11:32.856922",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "Router Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Network Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "autoname": "REC:.#######",
+ "creation": "2021-07-01 12:48:26.508474",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "receiver_name",
+  "mode",
+  "column_break_3",
+  "static_ip_address",
+  "location_description_section",
+  "locality",
+  "column_break_7",
+  "locality_imagery"
+ ],
+ "fields": [
+  {
+   "fieldname": "receiver_name",
+   "fieldtype": "Link",
+   "label": "Receiver Name",
+   "options": "Item"
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "\nStatic Ip Address\nPPOE"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "static_ip_address",
+   "fieldtype": "Data",
+   "label": "Static Ip Address"
+  },
+  {
+   "fieldname": "location_description_section",
+   "fieldtype": "Section Break",
+   "label": "Location Description"
+  },
+  {
+   "fieldname": "locality",
+   "fieldtype": "Link",
+   "label": "Locality",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "locality_imagery",
+   "fieldtype": "Attach Image",
+   "label": "Locality Imagery"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-07-01 12:48:26.508474",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "Receiver Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Network Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

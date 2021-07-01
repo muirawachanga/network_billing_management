@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "autoname": "CUST.###########",
+ "creation": "2021-07-01 12:39:34.814407",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "installation_date",
+  "renewal_date",
+  "column_break_3",
+  "status",
+  "charging_frequency",
+  "internet_config_section",
+  "internet_package",
+  "router_configuration",
+  "column_break_8",
+  "internet_package_cost",
+  "receiver_configuration"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "label": "Customer Name",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "internet_package",
+   "fieldtype": "Link",
+   "label": "Internet Package",
+   "options": "Item"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Connected\nDisconnected\nTerminated"
+  },
+  {
+   "fieldname": "router_configuration",
+   "fieldtype": "Link",
+   "label": "Router Configuration",
+   "options": "Router Configuration"
+  },
+  {
+   "fieldname": "receiver_configuration",
+   "fieldtype": "Link",
+   "label": "Receiver Configuration",
+   "options": "Receiver Configuration"
+  },
+  {
+   "default": "Today",
+   "fieldname": "installation_date",
+   "fieldtype": "Date",
+   "label": "Installation Date"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "internet_config_section",
+   "fieldtype": "Section Break",
+   "label": "Internet Config"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "renewal_date",
+   "fieldtype": "Date",
+   "label": "Renewal Date"
+  },
+  {
+   "fieldname": "internet_package_cost",
+   "fieldtype": "Data",
+   "label": "Internet Package Cost"
+  },
+  {
+   "fieldname": "charging_frequency",
+   "fieldtype": "Select",
+   "label": "Charging Frequency",
+   "options": "Daily\nMonthly"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-07-01 13:06:22.403349",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "Customer Onboarding",
+ "name_case": "Title Case",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Network Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
