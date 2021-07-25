@@ -4,5 +4,6 @@
 # import frappe
 import unittest
 
+
 class TestReceiverConfiguration(unittest.TestCase):
-	pass
+    pass

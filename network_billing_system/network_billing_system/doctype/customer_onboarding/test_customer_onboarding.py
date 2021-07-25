@@ -4,5 +4,6 @@
 # import frappe
 import unittest
 
+
 class TestCustomerOnboarding(unittest.TestCase):
-	pass
+    pass
