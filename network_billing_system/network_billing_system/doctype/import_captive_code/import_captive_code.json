@@ -6,19 +6,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "attach_import_file",
+  "import_file",
   "column_break_2",
   "status",
+  "expiry_duration",
   "import_details_section",
   "import_log",
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "attach_import_file",
-   "fieldtype": "Attach",
-   "label": "Attach Import File"
-  },
   {
    "fieldname": "status",
    "fieldtype": "Select",
@@ -47,12 +43,23 @@
    "fieldname": "import_details_section",
    "fieldtype": "Section Break",
    "label": "Import Details"
+  },
+  {
+   "fieldname": "expiry_duration",
+   "fieldtype": "Select",
+   "label": "Expiry Duration",
+   "options": "Daily\nMonthly"
+  },
+  {
+   "fieldname": "import_file",
+   "fieldtype": "Attach",
+   "label": "Attach Import File"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-01 13:30:56.508618",
+ "modified": "2021-11-18 14:46:07.667111",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Import Captive Code",
@@ -67,6 +74,7 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1
@@ -80,6 +88,7 @@
    "read": 1,
    "report": 1,
    "role": "Network Administrator",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1
