@@ -1,7 +1,9 @@
 import requests
 import json
 import frappe
-
+from frappe.utils import get_datetime, flt
+from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
+from frappe import _
 
 class KopokopoConnector:
     def __init__(
@@ -16,7 +18,7 @@ class KopokopoConnector:
         self.env = env
         self.app_key = app_key
         self.app_secret = app_secret
-        if env == "sandbox":
+        if self.env == "sandbox":
             self.base_url = sandbox_url
         else:
             self.base_url = live_url
@@ -81,22 +83,101 @@ class KopokopoConnector:
 
         kopokopo_url = "{0}{1}".format(self.base_url, "/api/v1/incoming_payments")
         r = requests.post(kopokopo_url, headers=headers, json=payload)
-        print(r.status_code)
+        return r.status_code
 
     def sanitize_mobile_number(self, number):
         """Add country code and strip leading zeroes from the phone number."""
         return "254" + str(number).lstrip("0")
+    
+    def create_webhook(self, callback):
+        """
+            The payload to create the webhook
+        """
+        headers = {
+            "Authorization": "Bearer {0}".format(self.authentication_token),
+            "Content-Type": "application/json",
+        }
+        webhook_url = "{0}{1}".format(self.base_url, "/api/v1/webhook_subscriptions")
+        payload = {
+            "event_type": "buygoods_transaction_received",
+            "url": callback,
+            "scope": "till",
+            "scope_reference": load_configuration("webhook_till_number") or "5890527"
+        }
+        r = requests.post(webhook_url, headers=headers, json=payload)        
 
 @frappe.whitelist(allow_guest=True)
 def verify_transaction(**kwargs):
     """Verify the transaction result received via callback from stk."""
     transaction_response = frappe._dict(kwargs["data"])
-    print(transaction_response)
-    if transaction_response.status == "Success":
+    # print(transaction_response)
+    if transaction_response.attributes["status"] == "Success":
         # Process the data...
         # integrate with erpnext workflow
-        if transaction_response.amount > 20:
-            return
-        # Process the sms
-        
+        response = transaction_response.attributes["event"]
+        process_callback_res(response)
 
+@frappe.whitelist(allow_guest=True)
+def process_webhook(**kwargs):
+    """process the data that you receive from the webhook"""
+    webhook_response = frappe._dict(kwargs["event"])
+    # process the webhook alert here/ when user pays directly to mpesa    
+    # print("Webhook response ",webhook_response)
+    process_callback_res(webhook_response)
+
+@frappe.whitelist()
+def process_stk(mobile, amount=20, till_number="5890527"):
+    if load_configuration("till_number"):
+        till_number = load_configuration("till_number")
+    callback_url = load_configuration("kopo_stk_callback")
+    connector = KopokopoConnector(env=load_configuration("env"))
+    connector.authenticate()
+    subcriber = {
+        "name": load_configuration("customer_name"),
+        "first_name": load_configuration("first_name"),
+        "last_name": load_configuration("last_name"),
+        "email": load_configuration("email"),
+        "phone_number": mobile,
+        "note": load_configuration("note")
+    }
+    if load_configuration("default_amount"):
+        amount = load_configuration("default_amount")
+    status_code = connector.stk_push(till_number=till_number, amount=amount, callback_url=callback_url, subscriber=subcriber)
+    frappe.log_error("Status code on STK Push: {}".format(status_code))
+    return status_code
+
+def process_callback_res(response):
+    response = frappe._dict(response["resource"])
+    # mpesa log after successful payment
+    frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
+    create_mpesa_log(response)
+    # check amount paid
+    if flt(response.amount) < flt(load_configuration("default_amount")):
+        frappe.log_error("No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(load_configuration("default_amount"), response.sender_first_name, response.sender_last_name))
+        return
+    # send sms
+    sms_object = {
+        
+        "local_server": load_configuration("sms_gateway_server"),
+        "api_key": load_configuration("sms_api_key"),
+        "phone": response.sender_phone_number
+    }
+    send_msg(sms_object)
+    frappe.log_error("Called below everything on webhook processing")
+
+def create_mpesa_log(response):
+    doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})
+    doc.flags.ignore_permissions = 1
+    doc.mobile_number = response.sender_phone_number
+    doc.transaction_code = response.reference
+    doc.amount_paid = response.amount
+    doc.first_name = response.sender_first_name
+    doc.middle_name = response.sender_middle_name
+    doc.last_name = response.sender_last_name
+    doc.save()
+
+def load_configuration(name, default=None):
+    val = frappe.db.get_single_value("Kopokopo Mpesa Setting", name)
+    if val is None:
+        val = default
+    return val

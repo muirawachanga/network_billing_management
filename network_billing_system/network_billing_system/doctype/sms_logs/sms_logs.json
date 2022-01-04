@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "creation": "2021-07-26 08:04:45.348908",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "captive_portal_code",
+  "mobile_number",
+  "column_break_3",
+  "time_sent",
+  "sent"
+ ],
+ "fields": [
+  {
+   "fieldname": "captive_portal_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Captive Portal Code"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "now",
+   "fieldname": "time_sent",
+   "fieldtype": "Datetime",
+   "label": "Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "sent",
+   "fieldtype": "Check",
+   "label": "Sent"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-01-08 18:16:52.410683",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "SMS Logs",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

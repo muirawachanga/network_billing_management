@@ -36,7 +36,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Connected\nDisconnected\nTerminated"
+   "options": "New\nConnected\nDisconnected\nTerminated"
   },
   {
    "fieldname": "router_configuration",
@@ -89,7 +89,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-07-01 13:06:22.403349",
+ "modified": "2021-11-14 23:13:33.208613",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Customer Onboarding",

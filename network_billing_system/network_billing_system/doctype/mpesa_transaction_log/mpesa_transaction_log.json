@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "creation": "2021-11-23 01:26:29.319443",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "mobile_number",
+  "transaction_code",
+  "column_break_3",
+  "time_of_payment",
+  "amount_paid",
+  "section_break_6",
+  "first_name",
+  "last_name",
+  "column_break_9",
+  "middle_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "transaction_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Transaction Code"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "now",
+   "fieldname": "time_of_payment",
+   "fieldtype": "Datetime",
+   "label": "Time of Payment"
+  },
+  {
+   "fieldname": "amount_paid",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Amount Paid"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-01-05 08:39:41.043111",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "Mpesa Transaction Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Network Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

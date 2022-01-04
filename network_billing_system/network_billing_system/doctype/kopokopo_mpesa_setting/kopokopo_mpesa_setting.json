@@ -1,0 +1,163 @@
+{
+ "actions": [],
+ "creation": "2022-01-05 09:16:56.386284",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sms_gateway_server",
+  "sms_api_key",
+  "webhook_already_set",
+  "default_amount",
+  "column_break_3",
+  "env",
+  "till_number",
+  "webhook_till_number",
+  "set_webhook",
+  "section_break_5",
+  "kopo_stk_callback",
+  "column_break_17",
+  "kopo_webhook_callback",
+  "section_break_16",
+  "customer_name",
+  "first_name",
+  "last_name",
+  "column_break_9",
+  "email",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "label": "Customer Name",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  },
+  {
+   "fieldname": "sms_gateway_server",
+   "fieldtype": "Data",
+   "label": "Sms Gateway Server"
+  },
+  {
+   "fieldname": "sms_api_key",
+   "fieldtype": "Data",
+   "label": "Sms Api Key"
+  },
+  {
+   "default": "0",
+   "fieldname": "set_webhook",
+   "fieldtype": "Check",
+   "label": "Set Webhook"
+  },
+  {
+   "default": "0",
+   "fieldname": "webhook_already_set",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Webhook Already Set"
+  },
+  {
+   "fieldname": "till_number",
+   "fieldtype": "Data",
+   "label": "STK Till Number"
+  },
+  {
+   "fieldname": "kopo_stk_callback",
+   "fieldtype": "Data",
+   "label": "Kopo Stk Callback"
+  },
+  {
+   "fieldname": "kopo_webhook_callback",
+   "fieldtype": "Data",
+   "label": "Kopo Webhook Callback"
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "env",
+   "fieldtype": "Select",
+   "label": "Env",
+   "options": "sandbox\nlive"
+  },
+  {
+   "fieldname": "default_amount",
+   "fieldtype": "Currency",
+   "label": "Default Amount"
+  },
+  {
+   "fieldname": "webhook_till_number",
+   "fieldtype": "Data",
+   "label": "Webhook Till Number"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-01-10 00:54:22.815759",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "Kopokopo Mpesa Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Network Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

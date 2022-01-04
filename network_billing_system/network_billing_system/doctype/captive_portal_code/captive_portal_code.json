@@ -6,9 +6,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "code",
-  "column_break_2",
   "status",
+  "code",
   "extra_details_section",
   "sms_sent",
   "column_break_6",
@@ -22,10 +21,6 @@
    "label": "Code",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "status",
@@ -57,7 +52,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-07-01 13:20:13.476479",
+ "modified": "2021-11-14 23:14:55.802905",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Captive Portal Code",
