@@ -2,10 +2,8 @@ import requests
 import json
 import frappe
 from frappe.utils import get_datetime, flt
-# from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
+from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
 from frappe import _
-from network_billing_system.sms_integration import localsms
-from network_billing_system.network_billing_system.doctype.captive_portal_code.captive_portal_code import update_sent_code, get_captive_code
 
 class KopokopoConnector:
     def __init__(
@@ -162,12 +160,8 @@ def process_callback_res(response):
         "api_key": load_configuration("sms_api_key"),
         "phone": response.sender_phone_number
     }
-    # send_msg(sms_object)
-    code = get_captive_code()
-    sms_integration = localsms(sms_object.get("local_server"), sms_object.get("api_key"))
-    sms_integration.send_sms(sms_object.get("phone"), code)
-	# update the code
-    update_sent_code(code)
+    send_msg(sms_object)
+    frappe.log_error("Called below everything on webhook processing")
 
 def create_mpesa_log(response):
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})
