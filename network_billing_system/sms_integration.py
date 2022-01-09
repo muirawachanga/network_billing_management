@@ -11,7 +11,7 @@ class localsms:
         status_code = 0
         headers = {"Content-type": "application/json", "Authorization": self.api_key}
         try:
-            frappe.log_error("Trying to send the SMS: Status code is {0} for the number: {1} localserver: {3} api key: {4}".format(status_code, data.get("to"), self.local_server, self.api_key))
+            frappe.log_error("Trying to send the SMS: Status code is {0} for the number: {1} localserver: {2} api key: {3}".format(status_code, data.get("to"), self.local_server, self.api_key))
             r = requests.post(self.local_server, json=data, headers=headers)
             frappe.log_error(r)
             r.raise_for_status()
