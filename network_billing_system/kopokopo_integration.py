@@ -140,6 +140,8 @@ def process_stk(mobile, amount=20, till_number="5890527"):
         "phone_number": mobile,
         "note": load_configuration("note")
     }
+    if load_configuration("default_amount"):
+        amount = load_configuration("default_amount")
     status_code = connector.stk_push(till_number=till_number, amount=amount, callback_url=callback_url, subscriber=subcriber)
     frappe.log_error("Status code on STK Push: {}".format(status_code))
     return status_code
