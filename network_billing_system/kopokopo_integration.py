@@ -2,8 +2,10 @@ import requests
 import json
 import frappe
 from frappe.utils import get_datetime, flt
-from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
+# from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
 from frappe import _
+from network_billing_system.sms_integration import localsms
+from network_billing_system.network_billing_system.doctype.captive_portal_code.captive_portal_code import update_sent_code, get_captive_code
 
 class KopokopoConnector:
     def __init__(
@@ -148,7 +150,7 @@ def process_callback_res(response):
     response = frappe._dict(response["resource"])
     # mpesa log after successful payment
     frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
-    # create_mpesa_log(response)
+    create_mpesa_log(response)
     # check amount paid
     if flt(response.amount) < flt(load_configuration("default_amount")):
         frappe.log_error("No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(load_configuration("default_amount"), response.sender_first_name, response.sender_last_name))
@@ -160,7 +162,12 @@ def process_callback_res(response):
         "api_key": load_configuration("sms_api_key"),
         "phone": response.sender_phone_number
     }
-    send_msg(sms_object)
+    # send_msg(sms_object)
+    code = get_captive_code()
+    sms_integration = localsms(sms_object.get("local_server"), sms_object.get("api_key"))
+    sms_integration.send_sms(sms_object.get("phone"), code)
+	# update the code
+    update_sent_code(code)
 
 def create_mpesa_log(response):
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})
