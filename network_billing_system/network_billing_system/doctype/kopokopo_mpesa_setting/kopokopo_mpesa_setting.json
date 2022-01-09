@@ -12,6 +12,7 @@
   "column_break_3",
   "env",
   "till_number",
+  "webhook_till_number",
   "set_webhook",
   "section_break_5",
   "kopo_stk_callback",
@@ -90,7 +91,7 @@
   {
    "fieldname": "till_number",
    "fieldtype": "Data",
-   "label": "Till Number"
+   "label": "STK Till Number"
   },
   {
    "fieldname": "kopo_stk_callback",
@@ -120,11 +121,16 @@
    "fieldname": "default_amount",
    "fieldtype": "Currency",
    "label": "Default Amount"
+  },
+  {
+   "fieldname": "webhook_till_number",
+   "fieldtype": "Data",
+   "label": "Webhook Till Number"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-01-08 20:29:44.614540",
+ "modified": "2022-01-10 00:54:22.815759",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Kopokopo Mpesa Setting",

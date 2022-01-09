@@ -102,7 +102,7 @@ class KopokopoConnector:
             "event_type": "buygoods_transaction_received",
             "url": callback,
             "scope": "till",
-            "scope_reference": load_configuration("till_number") or "5890527"
+            "scope_reference": load_configuration("webhook_till_number") or "5890527"
         }
         r = requests.post(webhook_url, headers=headers, json=payload)        
 
