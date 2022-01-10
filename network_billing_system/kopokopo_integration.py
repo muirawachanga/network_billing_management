@@ -4,6 +4,7 @@ import frappe
 from frappe.utils import get_datetime, flt
 from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
 from frappe import _
+from network_billing_system.utils import load_configuration
 
 class KopokopoConnector:
     def __init__(
@@ -155,13 +156,7 @@ def process_callback_res(response):
         frappe.log_error("No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(load_configuration("default_amount"), response.sender_first_name, response.sender_last_name))
         return
     # send sms
-    sms_object = {
-        
-        "local_server": load_configuration("sms_gateway_server"),
-        "api_key": load_configuration("sms_api_key"),
-        "phone": response.sender_phone_number
-    }
-    send_msg(sms_object)
+    send_msg(response.sender_phone_number)
 
 def create_mpesa_log(response):
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})
@@ -173,9 +168,3 @@ def create_mpesa_log(response):
     doc.middle_name = response.sender_middle_name
     doc.last_name = response.sender_last_name
     doc.save()
-
-def load_configuration(name, default=None):
-    val = frappe.db.get_single_value("Kopokopo Mpesa Setting", name)
-    if val is None:
-        val = default
-    return val

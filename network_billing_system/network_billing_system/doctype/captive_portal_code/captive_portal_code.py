@@ -15,8 +15,11 @@ def get_captive_code():
     if code:
         return code[0].name
 
-def update_sent_code(code):
+def update_sent_code(code, sms_code):
+    sms_sent = 1
+    if sms_code != 200:
+        sms_sent = 0
     doc = frappe.get_doc("Captive Portal Code", code)
     doc.status = "Inactive"
-    doc.sms_sent = 1
+    doc.sms_sent = sms_sent
     doc.save(ignore_permissions=True)

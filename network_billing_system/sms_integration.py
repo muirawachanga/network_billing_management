@@ -1,9 +1,10 @@
 import requests
 import json
 import frappe
+from network_billing_system.utils import load_configuration
 
 class localsms:
-    def __init__(self, local_server="http://192.168.0.60:8082", api_key="f4296868"):
+    def __init__(self, local_server=load_configuration("sms_gateway_server"), api_key=load_configuration("sms_api_key")):
         self.local_server = local_server
         self.api_key = api_key
 
@@ -21,18 +22,28 @@ class localsms:
             frappe.log_error("Error trying to send the SMS: Status code: {}".format(status_code))
             return status_code
     
-    def send_sms(self, phone, msg):
+    def send_sms(self, phone, msg, name=None):
         if phone and msg:
             data = {"to": phone, "message": msg}
             status_code = self.sms_integration(data)
+            if name:
+                self.update_sms_log(name, status_code)
+                return status_code
             if status_code == 200:
                 self.create_sms_log(phone, msg, sent=1)
             else:
                 self.create_sms_log(phone, msg)
-                
+            return status_code
+    
     def create_sms_log(self, phone, msg, sent=0):
         doc = frappe.get_doc({"doctype": "SMS Logs"})
         doc.captive_portal_code = msg
         doc.mobile_number = phone
         doc.sent = sent
         doc.save(ignore_permissions=True)
+
+    def update_sms_log(self, name, status_code):
+        if status_code == 200:
+            doc = frappe.get_doc("SMS Logs", name)
+            doc.sent = 1
+            doc.save(ignore_permissions=True)
