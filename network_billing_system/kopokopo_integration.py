@@ -143,13 +143,12 @@ def process_stk(mobile, amount=20, till_number="5890527"):
     if load_configuration("default_amount"):
         amount = load_configuration("default_amount")
     status_code = connector.stk_push(till_number=till_number, amount=amount, callback_url=callback_url, subscriber=subcriber)
-    frappe.log_error("Status code on STK Push: {}".format(status_code))
     return status_code
 
 def process_callback_res(response):
     response = frappe._dict(response["resource"])
     # mpesa log after successful payment
-    frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
+    # frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
     create_mpesa_log(response)
     # check amount paid
     if flt(response.amount) < flt(load_configuration("default_amount")):
@@ -163,7 +162,6 @@ def process_callback_res(response):
         "phone": response.sender_phone_number
     }
     send_msg(sms_object)
-    frappe.log_error("Called below everything on webhook processing")
 
 def create_mpesa_log(response):
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})
