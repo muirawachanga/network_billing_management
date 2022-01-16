@@ -18,8 +18,7 @@ async function submit() {
                 frappe.show_alert("Please keep your phone on");
             }
             setTimeout(()=>{
-                let redirect_url = "/";
-                window.location.href = redirect_url;},5000)
+                window.history.go(-1);},4000)
         },
         error: (err)=>{
             frappe.show_alert("Something went wrong please try again");
