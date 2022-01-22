@@ -12,8 +12,12 @@ from network_billing_system.network_billing_system.doctype.captive_portal_code.c
 
 
 class SMSLogs(Document):
-    pass
-
+    def after_insert(self):
+        if not self.captive_portal_code and self.mobile_number:
+            # get a code
+            frappe.db.set_value(self.doctype, self.name, "captive_portal_code", get_captive_code())
+            send_msg(self.mobile_number, self.name, self.captive_portal_code)
+            self.reload()                  
 
 @frappe.whitelist()
 def send_msg(phone, name=None, msg_=None):
