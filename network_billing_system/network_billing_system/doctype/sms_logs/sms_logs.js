@@ -5,23 +5,6 @@ frappe.ui.form.on('SMS Logs', {
 	refresh(frm) {
 		frm.events.make_custom_button(frm);
 	  },
-	//   onload(frm){
-	// 	if (frm.doc.__islocal != 1) {
-	// 	  frappe.call({
-	// 		method: 'metering.metering.doctype.disco_meter_installation.disco_meter_installation.determine_reload',
-	// 		args: {
-	// 		  name: frm.doc.name,
-	// 		  disco_type: 'Disco Meter Installation'
-	// 		},
-	// 		callback(r){
-	// 		  if (r.message === true){
-	// 			frm.save();
-	// 		  }
-	// 		}
-	// 	  })
-	// 	}
-		
-	//   },
 	  make_custom_button(frm) {
 		frm.add_custom_button(__('Send'),
 			() => frm.events.resend(frm), __('Resend SMS'));
