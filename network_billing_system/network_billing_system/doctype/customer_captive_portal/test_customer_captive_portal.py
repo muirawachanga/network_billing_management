@@ -4,5 +4,6 @@
 # import frappe
 import unittest
 
+
 class TestCustomerCaptivePortal(unittest.TestCase):
-	pass
+    pass

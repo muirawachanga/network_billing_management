@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+
 class DataImport(Document):
     def __init__(self, *args, **kwargs):
         self._log = ""

@@ -9,11 +9,18 @@ import frappe
 class CaptivePortalCode(Document):
     pass
 
+
 def get_captive_code():
-    code = frappe.get_list("Captive Portal Code", 
-    {"status": "Active", "sms_sent": 0}, limit=1, order_by="creation desc", ignore_permissions=True)
+    code = frappe.get_list(
+        "Captive Portal Code",
+        {"status": "Active", "sms_sent": 0},
+        limit=1,
+        order_by="creation desc",
+        ignore_permissions=True,
+    )
     if code:
         return code[0].name
+
 
 def update_sent_code(code, sms_code):
     sms_sent = 1

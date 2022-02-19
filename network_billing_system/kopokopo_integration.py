@@ -2,9 +2,12 @@ import requests
 import json
 import frappe
 from frappe.utils import get_datetime, flt
-from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import send_msg
+from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import (
+    send_msg,
+)
 from frappe import _
 from network_billing_system.utils import load_configuration
+
 
 class KopokopoConnector:
     def __init__(
@@ -30,7 +33,7 @@ class KopokopoConnector:
         This method is used to fetch the access token required by Kopokopo.
 
         Returns:
-            access_token (str): This token is to be used with the Bearer 
+            access_token (str): This token is to be used with the Bearer
             header for further API calls to Kopokopo.
         """
         authenticate_uri = "/oauth/token"
@@ -67,7 +70,9 @@ class KopokopoConnector:
             "subscriber": {
                 "first_name": subscriber.get("first_name"),
                 "last_name": subscriber.get("last_name"),
-                "phone_number": self.sanitize_mobile_number(subscriber.get("phone_number")),
+                "phone_number": self.sanitize_mobile_number(
+                    subscriber.get("phone_number")
+                ),
                 "email": subscriber.get("email"),
             },
             "amount": {"currency": "KES", "value": amount},
@@ -88,11 +93,11 @@ class KopokopoConnector:
 
     def sanitize_mobile_number(self, number):
         """Add country code and strip leading zeroes from the phone number."""
-        return "254" + str(number).lstrip("0")
-    
+        return "+254" + str(number).lstrip("0")
+
     def create_webhook(self, callback):
         """
-            The payload to create the webhook
+        The payload to create the webhook
         """
         headers = {
             "Authorization": "Bearer {0}".format(self.authentication_token),
@@ -103,9 +108,10 @@ class KopokopoConnector:
             "event_type": "buygoods_transaction_received",
             "url": callback,
             "scope": "till",
-            "scope_reference": load_configuration("webhook_till_number") or "5890527"
+            "scope_reference": load_configuration("webhook_till_number") or "5890527",
         }
-        r = requests.post(webhook_url, headers=headers, json=payload)        
+        r = requests.post(webhook_url, headers=headers, json=payload)
+
 
 @frappe.whitelist(allow_guest=True)
 def verify_transaction(**kwargs):
@@ -118,13 +124,15 @@ def verify_transaction(**kwargs):
         response = transaction_response.attributes["event"]
         process_callback_res(response)
 
+
 @frappe.whitelist(allow_guest=True)
 def process_webhook(**kwargs):
     """process the data that you receive from the webhook"""
     webhook_response = frappe._dict(kwargs["event"])
-    # process the webhook alert here/ when user pays directly to mpesa    
+    # process the webhook alert here/ when user pays directly to mpesa
     # print("Webhook response ",webhook_response)
     process_callback_res(webhook_response)
+
 
 @frappe.whitelist()
 def process_stk(mobile, amount=20, till_number="5890527"):
@@ -139,12 +147,18 @@ def process_stk(mobile, amount=20, till_number="5890527"):
         "last_name": load_configuration("last_name"),
         "email": load_configuration("email"),
         "phone_number": mobile,
-        "note": load_configuration("note")
+        "note": load_configuration("note"),
     }
     if load_configuration("default_amount"):
         amount = load_configuration("default_amount")
-    status_code = connector.stk_push(till_number=till_number, amount=amount, callback_url=callback_url, subscriber=subcriber)
+    status_code = connector.stk_push(
+        till_number=till_number,
+        amount=amount,
+        callback_url=callback_url,
+        subscriber=subcriber,
+    )
     return status_code
+
 
 def process_callback_res(response):
     response = frappe._dict(response["resource"])
@@ -153,10 +167,17 @@ def process_callback_res(response):
     create_mpesa_log(response)
     # check amount paid
     if flt(response.amount) < flt(load_configuration("default_amount")):
-        frappe.log_error("No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(load_configuration("default_amount"), response.sender_first_name, response.sender_last_name))
+        frappe.log_error(
+            "No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(
+                load_configuration("default_amount"),
+                response.sender_first_name,
+                response.sender_last_name,
+            )
+        )
         return
     # send sms
     send_msg(response.sender_phone_number)
+
 
 def create_mpesa_log(response):
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})

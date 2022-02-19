@@ -9,7 +9,8 @@
   "mobile_number",
   "column_break_3",
   "time_sent",
-  "sent"
+  "sent",
+  "awaiting_mpesa"
  ],
  "fields": [
   {
@@ -39,11 +40,17 @@
    "fieldname": "sent",
    "fieldtype": "Check",
    "label": "Sent"
+  },
+  {
+   "default": "0",
+   "fieldname": "awaiting_mpesa",
+   "fieldtype": "Check",
+   "label": "Awaiting Mpesa"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-01-08 18:16:52.410683",
+ "modified": "2022-02-19 03:00:59.918448",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "SMS Logs",

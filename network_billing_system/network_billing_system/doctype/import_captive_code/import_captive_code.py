@@ -23,10 +23,7 @@ class ImportCaptiveCode(DataImport):
                 self.write_log("Code : {0} imported successfully.".format(row[0]))
             except Exception as er:
                 not_imported += 1
-                self.write_log(
-                    "Code: {0} Not Imported beacuse: {1}".format(row[0], er)
-                )
+                self.write_log("Code: {0} Not Imported beacuse: {1}".format(row[0], er))
             else:
                 imported += 1
         return imported, not_imported
-
