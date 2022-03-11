@@ -63,7 +63,7 @@
   {
    "fieldname": "note",
    "fieldtype": "Small Text",
-   "label": "Note"
+   "label": "Notes"
   },
   {
    "fieldname": "sms_gateway_server",
@@ -130,7 +130,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-01-10 00:54:22.815759",
+ "modified": "2022-03-12 00:09:08.946010",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Kopokopo Mpesa Setting",
