@@ -1,5 +1,6 @@
 import frappe
 
+
 def load_configuration(name, default=None):
     # check if the app is installed or not, otherwise an error is exempted
     # when Kopokopo doctype is not installed.
