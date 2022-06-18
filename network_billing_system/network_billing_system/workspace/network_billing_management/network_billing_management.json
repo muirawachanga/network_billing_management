@@ -52,6 +52,24 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Sms Communication",
+   "link_to": "SMS Communication",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Communication Log",
+   "link_to": "SMS Communication Logs",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Captive Portal Code",
    "link_type": "DocType",
    "onboard": 0,
@@ -111,7 +129,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-03-12 00:41:55.675677",
+ "modified": "2022-06-18 05:56:26.232163",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Network Billing Management",
@@ -135,6 +153,12 @@
    "doc_view": "",
    "label": "Mpesa Payment Logs",
    "link_to": "Mpesa Transaction Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "SMS Communication",
+   "link_to": "SMS Communication",
    "type": "DocType"
   }
  ]
