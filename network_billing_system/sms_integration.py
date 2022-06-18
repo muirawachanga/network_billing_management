@@ -53,17 +53,12 @@ class localsms:
             return status_code
 
     def send_comm_sms(self, phone_list, msg):
-        from time import sleep
-
-        for x in phone_list:
-            data = {"to": x, "message": msg}
-            status_code = self.sms_integration(data)
-            print(x)
-            if status_code == 200:
-                self.create_sms_comm_log(x, msg, sent=1)
-            else:
-                self.create_sms_comm_log(x, msg)
-            sleep(1)
+        data = {"to": phone_list, "message": msg}
+        status_code = self.sms_integration(data)
+        if status_code == 200:
+            self.create_sms_comm_log(phone_list, msg, sent=1)
+        else:
+            self.create_sms_comm_log(phone_list, msg)
 
     def create_sms_log(self, phone, msg, sent=0):
         doc = frappe.get_doc({"doctype": "SMS Logs"})

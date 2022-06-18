@@ -108,7 +108,11 @@ class SMSCommunication(Document):
 
     @frappe.whitelist()
     def send_comm_sms(self):
-        from network_billing_system.sms_integration import localsms
+        # from network_billing_system.sms_integration import localsms
+        from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import (
+            send_msg,
+            localsms,
+        )
 
         receiver_list = []
         if not self.message:
@@ -117,5 +121,12 @@ class SMSCommunication(Document):
             receiver_list = self.get_receiver_nos()
         if receiver_list:
             sms_config = localsms()
-            sms_config.send_comm_sms(receiver_list, cstr(self.message))
+            from time import sleep
+
+            for x in receiver_list:
+                if self.send_free_code:
+                    send_msg(x)
+                    sleep(0.5)
+                sms_config.send_comm_sms(x, cstr(self.message))
+                sleep(0.5)
         msgprint(_("Sending completed"))

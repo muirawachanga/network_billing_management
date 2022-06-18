@@ -9,6 +9,7 @@
   "customer",
   "start_date",
   "end_date",
+  "send_free_code",
   "supplier",
   "sales_partner",
   "department",
@@ -121,12 +122,19 @@
    "fieldtype": "Button",
    "label": "Send SMS",
    "options": "send_comm_sms"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.send_to=='Captive Customer'",
+   "fieldname": "send_free_code",
+   "fieldtype": "Check",
+   "label": "Send Free Code"
   }
  ],
  "icon": "fa fa-mobile-phone",
  "issingle": 1,
  "links": [],
- "modified": "2022-06-18 05:17:39.858007",
+ "modified": "2022-06-18 05:45:26.665758",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "SMS Communication",
