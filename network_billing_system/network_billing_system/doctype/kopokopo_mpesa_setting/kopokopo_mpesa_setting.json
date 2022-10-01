@@ -7,6 +7,7 @@
  "field_order": [
   "sms_gateway_server",
   "sms_api_key",
+  "allow_code_resend",
   "webhook_already_set",
   "default_amount",
   "column_break_3",
@@ -126,11 +127,17 @@
    "fieldname": "webhook_till_number",
    "fieldtype": "Data",
    "label": "Webhook Till Number"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_code_resend",
+   "fieldtype": "Check",
+   "label": "Allow Code Resend"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-03-12 00:09:08.946010",
+ "modified": "2022-10-01 13:25:44.256007",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Kopokopo Mpesa Setting",

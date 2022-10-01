@@ -129,4 +129,3 @@ class SMSCommunication(Document):
                     sleep(0.5)
                 sms_config.send_comm_sms(x, cstr(self.message))
                 sleep(0.5)
-        msgprint(_("Sending completed"))

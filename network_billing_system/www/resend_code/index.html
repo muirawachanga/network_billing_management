@@ -1,0 +1,30 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Digissiet-Tech Pay") }}{% endblock %}
+
+{% block script %}
+<script src="assets/js/moment-bundle.min.js"></script>
+<script src="resend_code/index.js"></script>
+{% endblock %}
+
+{% block page_content %}
+<!--Enter Details-->
+<div id="enter-details" class="mb-5">
+    <div class="text-center mt-5">
+        <h3>Digissiet-Tech</h3>
+        <p class="lead text-muted">Please insert your number and click Resend.</p>
+    </div>
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-4 align-items-center">
+            <form id="customer-form" action='#'>
+            <input class="form-control mt-3" type="tel" name="customer_number" id="customer_number" placeholder="0718215557" required>
+            </form>
+            <div class="row mt-3 " id="submit-button-area">
+                <div class="col-md mt-3" style="grid-area: submit;"><button class="btn btn-primary form-control " onclick="submit()" id="submit-button">Resend</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}
