@@ -33,11 +33,12 @@ def send_msg(phone, name=None, msg_=None):
     if msg_:
         msg = msg_
     sms_integration = localsms()
-    sms_code = sms_integration.send_sms(phone, msg, name)
+    sms_status_code = sms_integration.send_sms(phone, msg, name)
     # update the code
-    if sms_code != 200:
+    if sms_status_code != 200:
         return
-    update_sent_code(msg, sms_code)
+    if len(msg) <= 20:
+        update_sent_code(msg, sms_status_code)
 
 
 def unsent_sms():
@@ -82,7 +83,7 @@ def validate_amount(phone, current_amount):
         msg = frappe.db.get_single_value("SMS Template Setting", "less_payment_template")
         amount_day = get_amount_day(phone)
         if amount_day == expected_amount:
-            return 1
+            return True
         elif amount_day > expected_amount:
             # more than 30, if someone had paid more than 30 then high chance is paying 
             # for somelese or should be a reverse
@@ -97,7 +98,7 @@ def validate_amount(phone, current_amount):
             if balance != 0:
                 msg = msg.format(received_amount=current_amount,expected_amount=expected_amount,balance_amount=balance)
                 send_msg(phone=phone, msg_=msg)
-        return 0
+        return False
 
 
 def get_amount_day(phone):
