@@ -91,6 +91,8 @@ def validate_amount(phone, current_amount=None):
             # for somelese or should be a reverse
             rem = amount_day % expected_amount 
             balance = expected_amount - int(rem)
+            if rem == 0:
+                return True
             if balance != 0:
                 msg = msg.format(received_amount=current_amount, expected_amount=expected_amount, balance_amount=balance)
                 send_msg(phone=phone, msg_=msg)
