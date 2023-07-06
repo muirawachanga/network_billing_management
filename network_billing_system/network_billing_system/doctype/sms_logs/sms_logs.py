@@ -17,12 +17,14 @@ class SMSLogs(Document):
         self.mobile_number = sanitize_mobile_number(self.mobile_number)
 
     def after_insert(self):
-        if not self.captive_portal_code and self.mobile_number:
+        if not self.captive_portal_code and self.mobile_number and validate_amount(self.mobile_number):
             # get a code
+            code = get_captive_code()
             frappe.db.set_value(
-                self.doctype, self.name, "captive_portal_code", get_captive_code()
+                self.doctype, self.name, "captive_portal_code", code
             )
             send_msg(self.mobile_number, self.name, self.captive_portal_code)
+            update_sent_code(code, 200)
             self.reload()
 
 
@@ -77,21 +79,21 @@ def sanitize_mobile_number(number):
         return number
 
 
-def validate_amount(phone, current_amount):
+def validate_amount(phone, current_amount=None):
         # received_amount, expected_amount, balance_amount
         expected_amount =  int(frappe.db.get_single_value("Kopokopo Mpesa Setting", "default_amount"))
         msg = frappe.db.get_single_value("SMS Template Setting", "less_payment_template")
         amount_day = get_amount_day(phone)
-        if amount_day == expected_amount:
+        if amount_day == expected_amount and current_amount:
             return True
-        elif amount_day > expected_amount:
+        elif amount_day > expected_amount and current_amount:
             # more than 30, if someone had paid more than 30 then high chance is paying 
             # for somelese or should be a reverse
             balance = amount_day - expected_amount
             if balance != 0:
                 msg = msg.format(received_amount=current_amount, expected_amount=expected_amount, balance_amount=balance)
                 send_msg(phone=phone, msg_=msg)
-        elif amount_day < expected_amount:
+        elif amount_day < expected_amount and current_amount:
             # more than 30, if someone had paid more than 30 then high chance is paying 
             # for somelese or should be a reverse
             balance = expected_amount -amount_day

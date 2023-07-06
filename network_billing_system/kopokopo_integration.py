@@ -172,13 +172,12 @@ def process_callback_res(response):
             send_msg(response.sender_phone_number)
         else:
             value = validate_amount(response.sender_phone_number, response.amount)
-            frappe.log_error("Error: kopokopo", value)
-            if value == 1:
+            if value == True:
                 send_msg(response.sender_phone_number)
     except:
         frappe.log_error(
             frappe.get_traceback(),
-            "Error: Kopokopo Processing less amount"
+            "Error: Kopokopo Processing Call Back Url"
         )
 
 def create_mpesa_log(response):
