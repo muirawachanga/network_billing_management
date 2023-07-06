@@ -177,11 +177,7 @@ def process_callback_res(response):
                 send_msg(response.sender_phone_number)
     except:
         frappe.log_error(
-            "No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(
-                load_configuration("default_amount"),
-                response.sender_first_name,
-                response.sender_last_name,
-            ),
+            frappe.get_traceback(),
             "Error: Kopokopo Processing less amount"
         )
 
