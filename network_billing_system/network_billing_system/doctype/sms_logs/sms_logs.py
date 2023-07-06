@@ -17,7 +17,7 @@ class SMSLogs(Document):
         self.mobile_number = sanitize_mobile_number(self.mobile_number)
 
     def after_insert(self):
-        if not self.captive_portal_code and self.mobile_number and validate_amount(self.mobile_number):
+        if not self.captive_portal_code and self.mobile_number:
             # get a code
             code = get_captive_code()
             frappe.db.set_value(
