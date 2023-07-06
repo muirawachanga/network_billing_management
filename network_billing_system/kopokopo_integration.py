@@ -171,7 +171,9 @@ def process_callback_res(response):
         if flt(response.amount) >= flt(load_configuration("default_amount")):
             send_msg(response.sender_phone_number)
         else:
-            if validate_amount(response.sender_phone_number, response.amount):
+            value = validate_amount(response.sender_phone_number, response.amount)
+            frappe.log_error("Error: kopokopo", value)
+            if value == 1:
                 send_msg(response.sender_phone_number)
     except:
         frappe.log_error(

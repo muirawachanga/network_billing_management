@@ -82,7 +82,7 @@ def validate_amount(phone, current_amount):
         msg = frappe.db.get_single_value("SMS Template Setting", "less_payment_template")
         amount_day = get_amount_day(phone)
         if amount_day == expected_amount:
-            return True
+            return 1
         elif amount_day > expected_amount:
             # more than 30, if someone had paid more than 30 then high chance is paying 
             # for somelese or should be a reverse
@@ -97,7 +97,7 @@ def validate_amount(phone, current_amount):
             if balance != 0:
                 msg = msg.format(received_amount=current_amount,expected_amount=expected_amount,balance_amount=balance)
                 send_msg(phone=phone, msg_=msg)
-        return False
+        return 0
 
 
 def get_amount_day(phone):
