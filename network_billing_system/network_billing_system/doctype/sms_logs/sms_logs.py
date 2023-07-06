@@ -89,9 +89,8 @@ def validate_amount(phone, current_amount=None):
         elif amount_day > expected_amount and current_amount:
             # more than 30, if someone had paid more than 30 then high chance is paying 
             # for somelese or should be a reverse
-            rem = expected_amount % amount_day
-            balance = expected_amount - rem
-
+            rem = amount_day % expected_amount 
+            balance = expected_amount - int(rem)
             if balance != 0:
                 msg = msg.format(received_amount=current_amount, expected_amount=expected_amount, balance_amount=balance)
                 send_msg(phone=phone, msg_=msg)
