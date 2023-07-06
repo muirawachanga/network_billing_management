@@ -89,9 +89,10 @@ def validate_amount(phone, current_amount=None):
         elif amount_day > expected_amount and current_amount:
             # more than 30, if someone had paid more than 30 then high chance is paying 
             # for somelese or should be a reverse
-            rem = amount_day % expected_amount 
+            quot, rem = divmod(amount_day, expected_amount)
             balance = expected_amount - int(rem)
-            if rem == 0:
+            code_sent = total_daily_code(phone)
+            if rem == 0 or quot > code_sent:
                 return True
             if balance != 0:
                 msg = msg.format(received_amount=current_amount, expected_amount=expected_amount, balance_amount=balance)
@@ -104,6 +105,22 @@ def validate_amount(phone, current_amount=None):
                 msg = msg.format(received_amount=current_amount,expected_amount=expected_amount,balance_amount=balance)
                 send_msg(phone=phone, msg_=msg)
         return False
+
+def total_daily_code(phone):
+    try:
+        from frappe.utils import today, getdate
+        from datetime import timedelta
+        code_sent = 0
+        tomorrow = getdate(today()) + timedelta(days=1)
+        today_code = frappe.db.sql("""
+            select count(captive_portal_code) as code_sent from `tabSMS Logs` where mobile_number=%s and captive_portal_code is not null and creation between %s and %s;        
+        """, (phone, today(), tomorrow), as_dict=True,)
+        if len(today_code) > 0:
+            code_sent = int(today_code[0].get("code_sent"))
+            return code_sent
+        return code_sent
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error: Getting amount for the day.")
 
 
 def get_amount_day(phone):
