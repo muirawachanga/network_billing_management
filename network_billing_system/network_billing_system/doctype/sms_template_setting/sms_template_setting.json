@@ -1,0 +1,60 @@
+{
+ "actions": [],
+ "creation": "2023-07-06 15:30:34.254641",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "less_payment_template",
+  "column_break_2",
+  "normal_communication_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "less_payment_template",
+   "fieldtype": "Small Text",
+   "label": "Less Payment Template"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "normal_communication_template",
+   "fieldtype": "Small Text",
+   "label": "Normal Communication Template"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2023-07-06 15:38:27.435652",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "SMS Template Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Network Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
