@@ -102,14 +102,17 @@ def validate_amount(phone, current_amount):
 
 def get_amount_day(phone):
     # this is the amount for the day
-    from frappe.utils import today, getdate
-    from datetime import timedelta
-    amount = 0
-    tomorrow = getdate(today()) + timedelta(days=1)
-    today_amount = frappe.db.sql("""
-        select sum(amount_paid) as amount_paid from `tabMpesa Transaction Log` where mobile_number=%s and creation between %s and %s ;        
-    """, (phone, today(), tomorrow), as_dict=True,)
-    if len(today_amount) > 0:
-        amount = int(today_amount[0].get("amount_paid"))
+    try:
+        from frappe.utils import today, getdate
+        from datetime import timedelta
+        amount = 0
+        tomorrow = getdate(today()) + timedelta(days=1)
+        today_amount = frappe.db.sql("""
+            select sum(amount_paid) as amount_paid from `tabMpesa Transaction Log` where mobile_number=%s and creation between %s and %s;        
+        """, (phone, today(), tomorrow), as_dict=True,)
+        if len(today_amount) > 0:
+            amount = int(today_amount[0].get("amount_paid"))
+            return amount
         return amount
-    return amount
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error: Getting amount for the day.")
