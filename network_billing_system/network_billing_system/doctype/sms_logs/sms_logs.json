@@ -10,7 +10,9 @@
   "column_break_3",
   "time_sent",
   "sent",
-  "awaiting_mpesa"
+  "awaiting_mpesa",
+  "custom_sms_section",
+  "custom_message"
  ],
  "fields": [
   {
@@ -46,11 +48,21 @@
    "fieldname": "awaiting_mpesa",
    "fieldtype": "Check",
    "label": "Awaiting Mpesa"
+  },
+  {
+   "fieldname": "custom_sms_section",
+   "fieldtype": "Section Break",
+   "label": "Custom Sms"
+  },
+  {
+   "fieldname": "custom_message",
+   "fieldtype": "Small Text",
+   "label": "Custom Message"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-02-19 03:00:59.918448",
+ "modified": "2023-07-06 21:12:08.355167",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "SMS Logs",

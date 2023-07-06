@@ -3,7 +3,7 @@ import json
 import frappe
 from frappe.utils import get_datetime, flt
 from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs import (
-    send_msg,
+    send_msg, validate_amount
 )
 from frappe import _
 from network_billing_system.utils import load_configuration
@@ -161,23 +161,27 @@ def process_stk(mobile, amount=20, till_number="5890527"):
 
 
 def process_callback_res(response):
-    response = frappe._dict(response["resource"])
-    # mpesa log after successful payment
-    # frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
-    create_mpesa_log(response)
-    # check amount paid
-    if flt(response.amount) < flt(load_configuration("default_amount")):
+    try:
+        response = frappe._dict(response["resource"])
+        # mpesa log after successful payment
+        # frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
+        create_mpesa_log(response)
+        # check amount paid
+        # Handle all cash related scenario here
+        if flt(response.amount) >= flt(load_configuration("default_amount")):
+            send_msg(response.sender_phone_number)
+        else:
+            if validate_amount(response.sender_phone_number, response.amount):
+                send_msg(response.sender_phone_number)
+    except:
         frappe.log_error(
             "No SMS sent as amount is less than configured amount: {0}/= for {1} {2} .".format(
                 load_configuration("default_amount"),
                 response.sender_first_name,
                 response.sender_last_name,
-            )
+            ),
+            "Error: Kopokopo Processing less amount"
         )
-        return
-    # send sms
-    send_msg(response.sender_phone_number)
-
 
 def create_mpesa_log(response):
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})

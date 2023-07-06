@@ -19,7 +19,7 @@ class localsms:
         try:
             # frappe.log_error("Trying to send the SMS: Status code is {0} for the number: {1} localserver: {2} api key: {3}".format(status_code, data.get("to"), self.local_server, self.api_key))
             r = requests.post(
-                self.local_server, json=data, headers=headers, timeout=0.9
+                self.local_server, json=data, headers=headers, timeout=0.98
             )
             print(r.raise_for_status())
             status_code = r.status_code
@@ -43,7 +43,7 @@ class localsms:
         if phone and msg:
             data = {"to": phone, "message": msg}
             status_code = self.sms_integration(data)
-            if name:
+            if name and status_code == 200:
                 self.update_sms_log(name, status_code)
                 return status_code
             if status_code == 200:
@@ -60,12 +60,6 @@ class localsms:
         else:
             self.create_sms_comm_log(phone_list, msg)
 
-    def create_sms_log(self, phone, msg, sent=0):
-        doc = frappe.get_doc({"doctype": "SMS Logs"})
-        doc.captive_portal_code = msg
-        doc.mobile_number = phone
-        doc.sent = sent
-        doc.save(ignore_permissions=True)
 
     def create_sms_comm_log(self, phone, msg, sent=0):
         doc = frappe.get_doc({"doctype": "SMS Communication Logs"})
@@ -79,12 +73,22 @@ class localsms:
             doc = frappe.get_doc("SMS Logs", name)
             doc.sent = 1
             doc.save(ignore_permissions=True)
+    
+    def create_sms_log(self, phone, msg, sent=0):
+        doc = frappe.get_doc({"doctype": "SMS Logs"})
+        if sent == 1 and len(msg) < 20:
+            doc.captive_portal_code = msg
+        else:
+            doc.custom_message = msg
+        doc.mobile_number = phone
+        doc.sent = sent
+        doc.save(ignore_permissions=True)
 
 
 def awaiting_mpesa(mobile):
     num = frappe.get_list(
         "SMS Logs",
-        {"sent": 1, "awaiting_mpesa": 1},
+        {"sent": 1, "awaiting_mpesa": 1, "mobile_number": mobile },
         limit=1,
         order_by="creation desc",
         ignore_permissions=True,

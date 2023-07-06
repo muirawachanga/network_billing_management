@@ -12,7 +12,7 @@ from network_billing_system.network_billing_system.doctype.captive_portal_code.c
 )
 
 
-class SMSLogs(Document):
+class SMSLogs(Document):    
     def before_insert(self):
         self.mobile_number = sanitize_mobile_number(self.mobile_number)
 
@@ -35,6 +35,8 @@ def send_msg(phone, name=None, msg_=None):
     sms_integration = localsms()
     sms_code = sms_integration.send_sms(phone, msg, name)
     # update the code
+    if sms_code != 200:
+        return
     update_sent_code(msg, sms_code)
 
 
@@ -72,3 +74,42 @@ def sanitize_mobile_number(number):
         return "+254" + str(number).lstrip("254")
     else:
         return number
+
+
+def validate_amount(phone, current_amount):
+        # received_amount, expected_amount, balance_amount
+        expected_amount =  int(frappe.db.get_single_value("Kopokopo Mpesa Setting", "default_amount"))
+        msg = frappe.db.get_single_value("SMS Template Setting", "less_payment_template")
+        amount_day = get_amount_day(phone)
+        if amount_day == expected_amount:
+            return True
+        elif amount_day > expected_amount:
+            # more than 30, if someone had paid more than 30 then high chance is paying 
+            # for somelese or should be a reverse
+            balance = amount_day - expected_amount
+            if balance != 0:
+                msg = msg.format(received_amount=current_amount, expected_amount=expected_amount, balance_amount=balance)
+                send_msg(phone=phone, msg_=msg)
+        elif amount_day < expected_amount:
+            # more than 30, if someone had paid more than 30 then high chance is paying 
+            # for somelese or should be a reverse
+            balance = expected_amount -amount_day
+            if balance != 0:
+                msg = msg.format(received_amount=current_amount,expected_amount=expected_amount,balance_amount=balance)
+                send_msg(phone=phone, msg_=msg)
+        return False
+
+
+def get_amount_day(phone):
+    # this is the amount for the day
+    from frappe.utils import today, getdate
+    from datetime import timedelta
+    amount = 0
+    tomorrow = getdate(today()) + timedelta(days=1)
+    today_amount = frappe.db.sql("""
+        select sum(amount_paid) as amount_paid from `tabMpesa Transaction Log` where mobile_number=%s and creation between %s and %s ;        
+    """, (phone, today(), tomorrow), as_dict=True,)
+    if len(today_amount) > 0:
+        amount = int(today_amount[0].get("amount_paid"))
+        return amount
+    return amount

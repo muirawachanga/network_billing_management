@@ -8,9 +8,13 @@
  "field_order": [
   "router_name",
   "router_model",
+  "firewall_name",
   "column_break_3",
   "mode",
-  "static_ip_address"
+  "static_ip_address",
+  "customer_name",
+  "invoice_scenario_section",
+  "due_date"
  ],
  "fields": [
   {
@@ -38,11 +42,32 @@
    "fieldname": "router_model",
    "fieldtype": "Data",
    "label": "Router Model"
+  },
+  {
+   "fieldname": "firewall_name",
+   "fieldtype": "Data",
+   "label": "Firewall Name"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "label": "Customer Name",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "invoice_scenario_section",
+   "fieldtype": "Section Break",
+   "label": "Invoice Scenario"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-07-01 12:11:32.856922",
+ "modified": "2023-06-16 22:00:21.822454",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Router Configuration",
