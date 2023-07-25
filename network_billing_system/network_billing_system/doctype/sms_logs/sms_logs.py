@@ -46,7 +46,7 @@ def send_msg(phone, name=None, msg_=None):
 def unsent_sms():
     sms_list = frappe.get_list(
         "SMS Logs",
-        {"sent": 0},
+        filters=[["sent", "=", 0], ["captive_portal_code", "!=", ""]],
         limit=1,
         order_by="creation desc",
         ignore_permissions=True,
