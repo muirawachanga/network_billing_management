@@ -59,7 +59,7 @@ def unsent_sms():
 
 def resend_sms(doc=None, method=None):
     if doc:
-        if doc.doctype == "SMS Logs" and doc.sent == 0 and len(doc.captive_portal_code) > 1:
+        if doc.doctype == "SMS Logs" and doc.sent == 0 and doc.captive_portal_code:
             send_msg(doc.mobile_number, doc.name, doc.captive_portal_code)
         return
         # after every 2 minutes
