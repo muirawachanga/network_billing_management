@@ -114,13 +114,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-    "cron": {
-        "0/2 * * * *": [
-            "network_billing_system.network_billing_system.doctype.sms_logs.sms_logs.resend_sms"
-        ]
-    }
-}
+#scheduler_events = {
+#    "cron": {
+#       "0/2 * * * *": [
+#            "network_billing_system.network_billing_system.doctype.sms_logs.sms_logs.resend_sms"
+#       ]
+#    }
+#}
 # 	"daily": [
 # 		"network_billing_system.tasks.daily"
 # 	],
