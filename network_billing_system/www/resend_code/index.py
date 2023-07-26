@@ -15,7 +15,7 @@ def get_context(context):
 def get_sms(number):
     sms_list = frappe.get_list(
         "SMS Logs",
-        filters=[["mobile_number", "=", number]],
+        filters=[["mobile_number", "=", number], ["captive_portal_code", "!=", ""],
         limit=1,
         fields=["name", "mobile_number", "captive_portal_code"],
         order_by="creation desc",
