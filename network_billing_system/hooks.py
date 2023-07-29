@@ -105,11 +105,11 @@ app_license = "MIT"
 # 		"on_trash": "method"
 # 	}
 # }
-doc_events = {
-    "SMS Logs": {
-        "after_insert": "network_billing_system.network_billing_system.doctype.sms_logs.sms_logs.resend_sms"
-    }
-}
+#doc_events = {
+#    "SMS Logs": {
+#        "after_insert": "network_billing_system.network_billing_system.doctype.sms_logs.sms_logs.resend_sms"
+#   }
+#}
 
 # Scheduled Tasks
 # ---------------
