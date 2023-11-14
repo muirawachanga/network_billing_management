@@ -47,7 +47,7 @@ class DataImport(Document):
 
         from frappe.utils.csvutils import read_csv_content
 
-        rows = read_csv_content(fcontent, False)
+        rows = read_csv_content(fcontent)
 
         # Skip header..
         data = rows[6:]

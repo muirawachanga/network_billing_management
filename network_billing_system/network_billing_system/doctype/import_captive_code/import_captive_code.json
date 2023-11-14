@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "CODE:.########",
+ "autoname": "format:CODE-{YY}-{####}",
  "creation": "2021-07-01 13:30:05.507228",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -59,10 +59,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-18 14:46:07.667111",
+ "modified": "2023-11-14 22:55:05.470348",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Import Captive Code",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -96,5 +97,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
