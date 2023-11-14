@@ -1,0 +1,104 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"Network Billing System\"}}]",
+ "creation": "2023-11-14 23:20:26.570709",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "money-coins-1",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Network Billing System",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Log",
+   "link_count": 0,
+   "link_to": "SMS Logs",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Captive Codes",
+   "link_count": 0,
+   "link_to": "Captive Portal Code",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Import Codes",
+   "link_count": 0,
+   "link_to": "Import Captive Code",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Billing Setting",
+   "link_count": 0,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Kopokopo Setting",
+   "link_count": 0,
+   "link_to": "Kopokopo Mpesa Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2023-11-14 23:27:48.092852",
+ "modified_by": "Administrator",
+ "module": "Network Billing System",
+ "name": "Network Billing System",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Network Administrator"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 23.0,
+ "shortcuts": [
+  {
+   "doc_view": "List",
+   "label": "Sms Log",
+   "link_to": "SMS Logs",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Billing Setting",
+   "link_to": "Kopokopo Mpesa Setting",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Captive Code",
+   "link_to": "Captive Portal Code",
+   "type": "DocType"
+  }
+ ],
+ "title": "Network Billing System"
+}
