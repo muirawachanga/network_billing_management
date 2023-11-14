@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"Network Billing System\"}}]",
+ "content": "[{\"id\":\"iZPCdywiqN\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Network Billing System</span>\",\"col\":12}},{\"id\":\"c22kJjIXGS\",\"type\":\"card\",\"data\":{\"card_name\":\"SMS Communication\",\"col\":4}},{\"id\":\"X3PheDZer7\",\"type\":\"card\",\"data\":{\"card_name\":\"Captive Code\",\"col\":4}},{\"id\":\"KSOPFzk6My\",\"type\":\"card\",\"data\":{\"card_name\":\"MPESA\",\"col\":4}},{\"id\":\"sD4PGU05oU\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"TzbHBzwOl5\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"SMS Log\",\"col\":4}},{\"id\":\"DPNC_FKpFK\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Captive Codes\",\"col\":4}},{\"id\":\"MOgweZMbRC\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Import Captive Code\",\"col\":4}},{\"id\":\"SeE5sfUOvA\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Mpesa Log\",\"col\":4}}]",
  "creation": "2023-11-14 23:20:26.570709",
  "custom_blocks": [],
  "docstatus": 0,
@@ -45,11 +45,116 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Billing Setting",
+   "label": "Kopokopo Setting",
    "link_count": 0,
+   "link_to": "Kopokopo Mpesa Setting",
    "link_type": "DocType",
    "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Communication",
+   "link_count": 4,
+   "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Logs",
+   "link_count": 0,
+   "link_to": "SMS Logs",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Communication",
+   "link_count": 0,
+   "link_to": "SMS Communication",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Communication Logs",
+   "link_count": 0,
+   "link_to": "SMS Communication Logs",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "SMS Template",
+   "link_count": 0,
+   "link_to": "SMS Template Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Captive Code",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Captive Code",
+   "link_count": 0,
+   "link_to": "Captive Portal Code",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Import Captive Code",
+   "link_count": 0,
+   "link_to": "Import Captive Code",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer Captive Code",
+   "link_count": 0,
+   "link_to": "Customer Captive Portal",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "MPESA",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Mpesa Transaction Logs",
+   "link_count": 0,
+   "link_to": "Mpesa Transaction Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -62,7 +167,7 @@
    "type": "Link"
   }
  ],
- "modified": "2023-11-14 23:27:48.092852",
+ "modified": "2023-11-14 23:53:14.528630",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Network Billing System",
@@ -70,7 +175,26 @@
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
- "quick_lists": [],
+ "quick_lists": [
+  {
+   "document_type": "SMS Logs",
+   "label": "SMS Log",
+   "quick_list_filter": "{\"sent\":[\"=\",0],\"captive_portal_code\":[\"is\",\"set\"]}"
+  },
+  {
+   "document_type": "Captive Portal Code",
+   "label": "Captive Codes",
+   "quick_list_filter": "{\"status\":[\"=\",\"Active\"],\"sms_sent\":[\"=\",0]}"
+  },
+  {
+   "document_type": "Import Captive Code",
+   "label": "Import Captive Code"
+  },
+  {
+   "document_type": "Mpesa Transaction Log",
+   "label": "Mpesa Log"
+  }
+ ],
  "roles": [
   {
    "role": "Network Administrator"
@@ -80,25 +204,6 @@
   }
  ],
  "sequence_id": 23.0,
- "shortcuts": [
-  {
-   "doc_view": "List",
-   "label": "Sms Log",
-   "link_to": "SMS Logs",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "",
-   "label": "Billing Setting",
-   "link_to": "Kopokopo Mpesa Setting",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "List",
-   "label": "Captive Code",
-   "link_to": "Captive Portal Code",
-   "type": "DocType"
-  }
- ],
+ "shortcuts": [],
  "title": "Network Billing System"
 }
