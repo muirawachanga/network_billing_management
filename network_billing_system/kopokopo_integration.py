@@ -135,10 +135,11 @@ def process_webhook(**kwargs):
 
 
 @frappe.whitelist()
-def process_stk(mobile, amount=20, till_number="5890527"):
+def process_stk(mobile, amount=load_configuration("default_amount"), callback_url=None, till_number="5890527"):
     if load_configuration("till_number"):
         till_number = load_configuration("till_number")
-    callback_url = load_configuration("kopo_stk_callback")
+    if not callback_url:
+        callback_url = load_configuration("kopo_stk_callback")
     connector = KopokopoConnector(env=load_configuration("env"))
     connector.authenticate()
     subcriber = {
@@ -149,8 +150,8 @@ def process_stk(mobile, amount=20, till_number="5890527"):
         "phone_number": mobile,
         "note": load_configuration("note"),
     }
-    if load_configuration("default_amount"):
-        amount = load_configuration("default_amount")
+    # if load_configuration("default_amount"):
+    #     amount = load_configuration("default_amount")
     status_code = connector.stk_push(
         till_number=till_number,
         amount=amount,
