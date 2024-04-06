@@ -19,7 +19,7 @@ class localsms:
         try:
             # frappe.log_error("Trying to send the SMS: Status code is {0} for the number: {1} localserver: {2} api key: {3}".format(status_code, data.get("to"), self.local_server, self.api_key))
             r = requests.post(
-                self.local_server, json=data, headers=headers, timeout=0.98
+                self.local_server, json=data, headers=headers, timeout=5.0
             )
             print(r.raise_for_status())
             status_code = r.status_code
