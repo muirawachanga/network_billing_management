@@ -12,13 +12,16 @@ class ImportCaptiveCode(DataImport):
         return 1
 
     def import_data(self, data):
+        if not self.package:
+            frappe.throw("Select the package matching this pfSense voucher roll.")
         not_imported = 0
         imported = 0
         for row in data:
             try:
                 doc = frappe.get_doc({"doctype": "Captive Portal Code"})
                 doc.code = row[0].strip()
-                doc.expiry_duration = self.expiry_duration
+                doc.package = self.package
+                doc.status = "Active"
                 doc.insert()
                 self.write_log("Code : {0} imported successfully.".format(row[0]))
             except Exception as er:

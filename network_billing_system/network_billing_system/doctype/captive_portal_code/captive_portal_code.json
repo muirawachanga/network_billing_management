@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "field:code",
+ "autoname": "hash",
  "creation": "2021-07-01 13:19:55.978792",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -8,6 +8,9 @@
  "field_order": [
   "status",
   "code",
+  "package",
+  "duration_minutes",
+  "portal_checkout",
   "extra_details_section",
   "sms_sent",
   "column_break_6",
@@ -23,10 +26,33 @@
    "unique": 1
   },
   {
+   "fieldname": "package",
+   "fieldtype": "Link",
+   "label": "Package",
+   "options": "Internet Package Profile",
+   "search_index": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "duration_minutes",
+   "fieldtype": "Int",
+   "label": "pfSense Duration (Minutes)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "portal_checkout",
+   "fieldtype": "Link",
+   "label": "Portal Checkout",
+   "options": "Portal Checkout",
+   "read_only": 1
+  },
+  {
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Active\nInactive"
+   "default": "Active",
+   "description": "Active means available inventory, not an authenticated pfSense session. Issued vouchers may still be valid in pfSense.",
+   "options": "Active\nReserved\nIssued\nInactive\nRevoked"
   },
   {
    "fieldname": "extra_details_section",
@@ -47,12 +73,14 @@
    "fieldname": "expiry_duration",
    "fieldtype": "Select",
    "label": "Expiry Duration",
+   "hidden": 1,
+   "read_only": 1,
    "options": "Daily\nMonthly"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-11-14 23:14:55.802905",
+ "modified": "2026-10-15 18:31:19.739000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Captive Portal Code",

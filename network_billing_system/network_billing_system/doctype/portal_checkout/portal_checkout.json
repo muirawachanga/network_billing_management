@@ -1,0 +1,35 @@
+{
+ "doctype": "DocType",
+ "name": "Portal Checkout",
+ "module": "Network Billing System",
+ "modified": "2026-10-15 18:31:19.739000",
+ "autoname": "hash",
+ "engine": "InnoDB",
+ "track_changes": 1,
+ "field_order": [
+  "package", "mobile_number", "amount", "currency", "duration_minutes",
+  "status", "voucher", "provider_payment_id", "provider_environment",
+  "till_number", "mpesa_receipt", "confirmed_at", "last_checked_at"
+ ],
+ "fields": [
+  {"fieldname": "package", "fieldtype": "Link", "options": "Internet Package Profile", "label": "Package", "reqd": 1, "read_only": 1, "in_list_view": 1},
+  {"fieldname": "mobile_number", "fieldtype": "Data", "label": "Mobile Number", "reqd": 1, "read_only": 1},
+  {"fieldname": "amount", "fieldtype": "Currency", "label": "Amount (KES)", "reqd": 1, "read_only": 1},
+  {"fieldname": "currency", "fieldtype": "Data", "label": "Currency", "default": "KES", "read_only": 1},
+  {"fieldname": "duration_minutes", "fieldtype": "Int", "label": "pfSense Duration (Minutes)", "read_only": 1},
+  {"fieldname": "status", "fieldtype": "Select", "label": "Payment Status", "options": "PENDING\nSUCCESS\nFAILED\nCANCELLED", "default": "PENDING", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "voucher", "fieldtype": "Link", "options": "Captive Portal Code", "label": "Voucher", "read_only": 1},
+  {"fieldname": "provider_payment_id", "fieldtype": "Data", "label": "Kopo Kopo Payment ID", "unique": 1, "read_only": 1},
+  {"fieldname": "provider_environment", "fieldtype": "Select", "label": "Provider Environment", "options": "sandbox\nlive", "read_only": 1},
+  {"fieldname": "till_number", "fieldtype": "Data", "label": "Till Number", "read_only": 1},
+  {"fieldname": "mpesa_receipt", "fieldtype": "Data", "label": "M-Pesa Receipt", "unique": 1, "read_only": 1},
+  {"fieldname": "confirmed_at", "fieldtype": "Datetime", "label": "Payment Confirmed At", "read_only": 1},
+  {"fieldname": "last_checked_at", "fieldtype": "Datetime", "label": "Last Provider Check", "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "report": 1},
+  {"role": "Network Administrator", "read": 1, "report": 1}
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC"
+}

@@ -7,6 +7,7 @@ from network_billing_system.network_billing_system.doctype.sms_logs.sms_logs imp
 )
 from frappe import _
 from network_billing_system.utils import load_configuration
+from network_billing_system.portal_rules import payment_id, payment_id_from_location
 
 
 class KopokopoConnector:
@@ -44,7 +45,8 @@ class KopokopoConnector:
             "grant_type": "client_credentials",
         }
         headers = {"Content-type": "application/json"}
-        r = requests.post(authenticate_url, json=data, headers=headers)
+        r = requests.post(authenticate_url, json=data, headers=headers, timeout=15)
+        r.raise_for_status()
         self.authentication_token = r.json()["access_token"]
         return r.json()["access_token"]
 
@@ -95,6 +97,47 @@ class KopokopoConnector:
         """Add country code and strip leading zeroes from the phone number."""
         return "+254" + str(number).lstrip("0")
 
+    def start_portal_payment(self, checkout, callback_url, subscriber):
+        payload = {
+            "payment_channel": "M-PESA STK Push",
+            "till_number": "K" + checkout.till_number,
+            "subscriber": {
+                "first_name": subscriber.get("first_name"),
+                "last_name": subscriber.get("last_name"),
+                "email": subscriber.get("email"),
+                "phone_number": checkout.mobile_number,
+            },
+            "amount": {"currency": "KES", "value": checkout.amount},
+            "metadata": {"portal_checkout": checkout.name, "package": checkout.package},
+            "_links": {"callback_url": callback_url},
+        }
+        response = requests.post(
+            self.base_url + "/api/v2/incoming_payments",
+            json=payload,
+            headers={
+                "Authorization": "Bearer " + self.authentication_token,
+                "Content-Type": "application/json",
+            },
+            timeout=15,
+            allow_redirects=False,
+        )
+        response.raise_for_status()
+        if response.status_code != 201:
+            raise ValueError("Kopo Kopo did not confirm creation of the payment request.")
+        return payment_id_from_location(response.headers.get("Location"), self.base_url)
+
+    def get_portal_payment(self, provider_payment_id):
+        response = requests.get(
+            self.base_url + "/api/v2/incoming_payments/" + payment_id(provider_payment_id),
+            headers={"Authorization": "Bearer " + self.authentication_token},
+            timeout=15,
+            allow_redirects=False,
+        )
+        response.raise_for_status()
+        if response.status_code != 200:
+            raise ValueError("Kopo Kopo did not return the payment resource.")
+        return response.json()
+
     def create_webhook(self, callback):
         """
         The payload to create the webhook
@@ -136,6 +179,8 @@ def process_webhook(**kwargs):
 
 @frappe.whitelist()
 def process_stk(mobile, amount=load_configuration("default_amount"), callback_url=None, till_number="5890527"):
+    if load_configuration("enable_package_portal"):
+        frappe.throw("Use the package captive portal to start a payment.")
     if load_configuration("till_number"):
         till_number = load_configuration("till_number")
     if not callback_url:
@@ -167,6 +212,9 @@ def process_callback_res(response):
         # mpesa log after successful payment
         # frappe.log_error("Response Amount: {0} Middle Name: {1}  Phone Number: {2}".format(response.amount, response.sender_middle_name, response.sender_phone_number))
         create_mpesa_log(response)
+        if load_configuration("enable_package_portal"):
+            # Package checkout confirms and allocates independently of SMS delivery.
+            return
         # check amount paid
         # Handle all cash related scenario here
         if flt(response.amount) >= flt(load_configuration("default_amount")):
@@ -182,6 +230,8 @@ def process_callback_res(response):
         )
 
 def create_mpesa_log(response):
+    if frappe.db.exists("Mpesa Transaction Log", {"transaction_code": response.reference}):
+        return
     doc = frappe.get_doc({"doctype": "Mpesa Transaction Log"})
     doc.flags.ignore_permissions = 1
     doc.mobile_number = response.sender_phone_number

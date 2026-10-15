@@ -1,0 +1,2 @@
+[post_model_sync]
+network_billing_system.patches.migrate_daily_vouchers_to_eight_hours
