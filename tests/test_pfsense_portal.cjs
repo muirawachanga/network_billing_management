@@ -38,6 +38,7 @@ function portal(packages) {
   };
   const calls = [];
   let response = packages;
+  let ok = true;
   const context = vm.createContext({
     document: {
       getElementById: element,
@@ -49,7 +50,7 @@ function portal(packages) {
     clearTimeout() {},
     fetch: async (url, options) => {
       calls.push({ url, payload: JSON.parse(options.body) });
-      return { ok: true, json: async () => ({ message: response }) };
+      return { ok, json: async () => ok ? ({ message: response }) : response };
     },
   });
   vm.runInContext(script, context);
@@ -57,6 +58,7 @@ function portal(packages) {
     element, calls,
     run: expression => vm.runInContext(expression, context),
     respond: value => { response = value; },
+    reject: value => { response = value; ok = false; },
     ready: async () => { await new Promise(resolve => setImmediate(resolve)); },
   };
 }
@@ -123,4 +125,38 @@ test("voucher submission preserves pfSense fields and does not load external ass
   assert.match(html, /name="redirurl"[^>]*value="\$PORTAL_REDIRURL\$"/);
   assert.match(html, /name="accept" value="Login"/);
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+href=/i);
+});
+
+test("configuration failure shows a friendly message without an ambiguous-payment warning", async () => {
+  const page = portal(catalogue);
+  await page.ready();
+  page.element("phone").value = "0712345678";
+  page.element("terms").checked = true;
+  page.reject({
+    _server_messages: JSON.stringify([JSON.stringify({
+      message: "Configure the Kopo Kopo environment and STK till number first.",
+      title: "Message", indicator: "red", raise_exception: 1,
+    })]),
+    exception: "frappe.exceptions.ValidationError: internal details",
+  });
+  await page.run("startPayment()");
+  assert.equal(page.element("paymentStatusTitle").textContent, "Payments temporarily unavailable");
+  assert.match(page.element("paymentStatusCopy").textContent, /No payment was requested/);
+  assert.doesNotMatch(page.element("paymentStatusCopy").textContent, /Kopo|raise_exception|prompt appeared/);
+  assert.equal(page.element("payButton").disabled, false);
+});
+
+test("unknown and malformed server errors never expose internal details or claim no payment", async () => {
+  const page = portal(catalogue);
+  await page.ready();
+  for (const payload of [
+    { _server_messages: "invalid JSON", exception: "private traceback" },
+    { message: "database password details" },
+    { _server_messages: JSON.stringify([JSON.stringify({ message: "unexpected failure" })]) },
+  ]) {
+    const error = page.run(`responseError(${JSON.stringify(payload)})`);
+    assert.match(error.message, /contact support/);
+    assert.equal(error.paymentNotStarted, undefined);
+    assert.doesNotMatch(error.message, /traceback|password|unexpected failure|No payment was requested/);
+  }
 });

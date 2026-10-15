@@ -475,6 +475,37 @@
       else return null;
       return /^254[17]\d{8}$/.test(digits) ? digits : null;
     }
+    function responseError(data) {
+      const error = new Error("The service could not complete your request. Please try again later or contact support.");
+      let messages = [];
+      if (typeof data?.message === "string") messages.push(data.message);
+      if (typeof data?._server_messages === "string") {
+        try {
+          const entries = JSON.parse(data._server_messages);
+          if (Array.isArray(entries)) {
+            entries.forEach(entry => {
+              const parsed = typeof entry === "string" ? JSON.parse(entry) : entry;
+              if (typeof parsed?.message === "string") messages.push(parsed.message);
+            });
+          }
+        } catch {
+          console.warn("The service returned an unreadable error message.");
+        }
+      }
+      const configurationErrors = new Set([
+        "Configure the Kopo Kopo environment and STK till number first.",
+        "Configure Kopo Kopo API credentials before taking payments.",
+        "Configure the Kopo Kopo subscriber first and last names.",
+        "The site encryption key must be configured before taking payments.",
+        "Package captive portal is not enabled.",
+        "The payment service could not authenticate. No payment was requested."
+      ]);
+      if (messages.some(message => configurationErrors.has(message))) {
+        error.message = "Payments are temporarily unavailable. No payment was requested. Please contact support or try again later.";
+        error.paymentNotStarted = true;
+      }
+      return error;
+    }
     async function postJson(url, payload) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -495,8 +526,7 @@
           throw new Error("The server returned an unreadable response. Please try again.");
         }
         if (!response.ok) {
-          const msg = data && (data.message || data._server_messages || data.exception);
-          throw new Error(typeof msg === "string" ? msg : "The request could not be completed. Please try again.");
+          throw responseError(data);
         }
         // Frappe usually wraps a whitelisted method's return value in `message`.
         return data && Object.prototype.hasOwnProperty.call(data, "message") ? data.message : data;
@@ -571,6 +601,12 @@
         pollingStartedAt = Date.now();
         pollPaymentStatus();
       } catch (error) {
+        if (error.paymentNotStarted === true) {
+          setPaymentStatus("Payments temporarily unavailable", error.message, false, false);
+          setNotice("payNotice", error.message, "error");
+          setPaymentBusy(false);
+          return;
+        }
         setPaymentStatus("Payment request needs checking", "If an M-Pesa prompt appeared on your phone, do not start another payment yet. Check your M-Pesa messages and payment status. " + (error.message || "The payment request could not be confirmed."), false, false);
         setNotice("payNotice", "If you already received an M-Pesa prompt, do not immediately start another payment. Use “Already paid?” to recover after the payment is confirmed.", "warning");
         setPaymentBusy(false);
