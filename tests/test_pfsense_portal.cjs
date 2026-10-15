@@ -144,6 +144,12 @@ test("configuration failure shows a friendly message without an ambiguous-paymen
   assert.match(page.element("paymentStatusCopy").textContent, /No payment was requested/);
   assert.doesNotMatch(page.element("paymentStatusCopy").textContent, /Kopo|raise_exception|prompt appeared/);
   assert.equal(page.element("payButton").disabled, false);
+  assert.equal(page.element("paymentStatus").attributes["data-state"], "error");
+  assert.equal(page.element("hidePaymentButton").textContent, "Close and try later");
+  assert.match(html, /wait a few minutes, then select Pay again/);
+  page.run('setPaymentStatus("Check your phone", "Approve the prompt.", true)');
+  assert.equal(page.element("paymentStatus").attributes["data-state"], "info");
+  assert.equal(page.element("hidePaymentButton").textContent, "Hide progress");
 });
 
 test("unknown and malformed server errors never expose internal details or claim no payment", async () => {

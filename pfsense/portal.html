@@ -148,6 +148,10 @@
     .payment-dialog::backdrop { background: var(--cp-backdrop); }
     .payment-dialog h2 { margin: 0; font-size: 18px; }
     .payment-dialog .status-copy { margin: 12px 0 0; }
+    .payment-dialog[data-state="error"] { border: 2px solid var(--cp-danger); }
+    .payment-dialog[data-state="error"] h2 { color: var(--cp-danger); }
+    .payment-dialog[data-state="error"] .progress-steps { display: none; }
+    .retry-guidance { padding: 12px; border-left: 3px solid var(--cp-danger); background: var(--cp-surface-soft); }
     .progress-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; list-style: none; margin: 24px 0; padding: 0; }
     .step { min-width: 0; color: var(--cp-text-muted); font-size: 11px; line-height: 1.5; text-align: center; overflow-wrap: anywhere; }
     .step-dot { display: grid; place-items: center; width: 28px; height: 28px; margin: 0 auto 8px; border: 1px solid var(--cp-border); border-radius: 50%; background: var(--cp-surface); font-weight: 800; }
@@ -303,6 +307,7 @@
         <span>Connect device</span>
       </li>
     </ol>
+    <p class="hint retry-guidance hidden" id="paymentRetryGuidance">No payment was requested. Close this message, wait a few minutes, then select Pay again. If the problem continues, contact support.</p>
     <button type="button" class="secondary-btn hidden" id="retryStatusButton">Check payment again</button>
     <button type="button" class="secondary-btn" id="receiptRecoveryButton">Already paid? Use M-Pesa receipt</button>
     <button type="button" class="secondary-btn" id="hidePaymentButton">Hide progress</button>
@@ -447,7 +452,11 @@
         else step.removeAttribute("aria-current");
       });
     }
-    function setPaymentStatus(title, copy, spinning = true, retry = false) {
+    function setPaymentStatus(title, copy, spinning = true, retry = false, state = "info") {
+      $("paymentStatus").setAttribute("data-state", state);
+      $("paymentRetryGuidance").classList.toggle("hidden", state !== "error");
+      $("receiptRecoveryButton").classList.toggle("hidden", state === "error");
+      $("hidePaymentButton").textContent = state === "error" ? "Close and try later" : "Hide progress";
       $("viewPaymentButton").classList.remove("hidden");
       $("paymentStatusTitle").textContent = title;
       $("paymentStatusCopy").textContent = copy;
@@ -602,7 +611,7 @@
         pollPaymentStatus();
       } catch (error) {
         if (error.paymentNotStarted === true) {
-          setPaymentStatus("Payments temporarily unavailable", error.message, false, false);
+          setPaymentStatus("Payments temporarily unavailable", error.message, false, false, "error");
           setNotice("payNotice", error.message, "error");
           setPaymentBusy(false);
           return;
