@@ -82,6 +82,15 @@ package-linked voucher inventory.
 
 #### Self-contained HTML integration
 
+The tracked, ready-to-upload template is **`pfsense/portal.html`**. It is outside
+the Frappe app's `www` and `public` directories: Frappe does not serve it.
+Upload it to your pfSense captive portal configuration, preserving any
+additional fields required by your working pfSense template. It includes the
+API URLs below, dynamic package loading, unavailable-package handling, a
+40-second request timeout, and explicit handling for ineligible access.
+All CSS and JavaScript are inline. The following snippets explain the integration
+for existing portal copies; they do not need to be applied again to the tracked file.
+
 Replace the placeholder `API` object in the supplied `portal2.html` with:
 
 ```js
@@ -221,6 +230,7 @@ Pure rules and mocked API boundary tests can run without a Frappe site:
 
 ```sh
 python -m unittest discover -s tests -v
+node --test tests/test_pfsense_portal.cjs
 ```
 
 They require `requests`, also used by the existing integration. Database locking,
