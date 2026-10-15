@@ -1,3 +1,4 @@
+import configparser
 import importlib.util
 import sqlite3
 import sys
@@ -120,8 +121,11 @@ class TestDailyVoucherMigration(unittest.TestCase):
 
     def test_patch_registered_after_model_sync(self):
         patches = (Path(__file__).parents[1] / "network_billing_system/patches.txt").read_text()
-        self.assertIn(
-            "[post_model_sync]\n"
-            "network_billing_system.patches.migrate_daily_vouchers_to_eight_hours",
-            patches,
+        parser = configparser.ConfigParser(allow_no_value=True)
+        parser.read_string(patches)
+        self.assertTrue(parser.has_section("pre_model_sync"))
+        self.assertEqual(list(parser["pre_model_sync"]), [])
+        self.assertEqual(
+            list(parser["post_model_sync"]),
+            ["network_billing_system.patches.migrate_daily_vouchers_to_eight_hours"],
         )
