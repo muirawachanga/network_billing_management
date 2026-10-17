@@ -53,7 +53,8 @@ function portal(packages, zone = "default") {
       return { ok, json: async () => ok ? ({ message: response }) : response };
     },
   });
-  vm.runInContext(script.replace('const ZONE_ID = "";', `const ZONE_ID = ${JSON.stringify(zone)};`), context);
+  element("portalZone").value = zone;
+  vm.runInContext(script, context);
   return {
     element, calls,
     run: expression => vm.runInContext(expression, context),
@@ -234,4 +235,27 @@ test("unconfigured zone cannot use default inventory but direct voucher still wo
   page.run("connectWithVoucher()");
   assert.equal(page.element("loginForm").submitted, true);
   assert.equal(page.calls.length, 0);
+});
+
+test("reads the zone rendered by the router without a hardcoded JavaScript zone", async () => {
+  const page = portal(catalogue, "guest_wifi");
+  await page.ready();
+  assert.equal(page.calls[0].payload.zone_id, "guest_wifi");
+  assert.match(html, /id="portalZone" value="\$PORTAL_ZONE\$"/);
+  page.element("phone").value = "0712345678";
+  page.element("terms").checked = true;
+  page.reject({ message: "test rejection" });
+  await page.run("startPayment()");
+  assert.equal(page.calls[1].payload.zone_id, "guest_wifi");
+});
+
+test("unexpanded router placeholders never reach billing APIs", async () => {
+  for (const zone of ["$PORTAL_ZONE$", "#PORTAL_ZONE#", "   "]) {
+    const page = portal(catalogue, zone);
+    await page.ready();
+    assert.equal(page.calls.length, 0);
+    await page.run("lookupExistingPayment()");
+    assert.equal(page.calls.length, 0);
+    assert.equal(page.element("payButton").disabled, true);
+  }
 });

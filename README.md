@@ -29,13 +29,14 @@ JavaScript and is uploaded manually to pfSense, not served as a Frappe page.
 ## Wi-Fi locations
 
 Create a **Captive Portal Zone** for each location or router zone, enable it,
-and select it on the location's packages and voucher imports. In each uploaded
-portal copy, set `ZONE_ID` to that record's exact ID. Package selection, payment,
-and receipt recovery use that location's inventory only.
-The template leaves `ZONE_ID` empty intentionally: billing operations are blocked
-until it is set. The APIs do not silently fall back to `default`. Existing
-portals with `ZONE_ID = "default"` must be updated for their actual location.
-Direct voucher login still works without this setting.
+and select it on the location's packages and voucher imports. The page reads
+the current zone automatically from pfSense's `$PORTAL_ZONE$` placeholder.
+The Frappe zone ID must exactly match that pfSense zone name. Package selection,
+payment, and receipt recovery use that location's inventory only.
+If the zone is missing or the placeholder is not replaced, billing operations
+are blocked rather than falling back to `default`. Direct voucher login still
+works. For local HTTP testing, replace the hidden `portalZone` input's value
+with your test zone name; restore `$PORTAL_ZONE$` before uploading to pfSense.
 
 Migration assigns existing records to the enabled `default` zone without
 changing their codes or payment status. Review this inventory before enabling
@@ -44,5 +45,5 @@ with imported vouchers cannot be moved between zones.
 
 The page's zone ID identifies inventory; it is not proof of the device's
 physical location. Enforcing device location requires trusted router-side
-integration. Use unique zone IDs across routers even if their local zone names
-are the same.
+integration. Use unique pfSense zone names across routers to keep their
+inventories distinct.

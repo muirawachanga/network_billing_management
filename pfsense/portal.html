@@ -327,11 +327,12 @@
     <input type="hidden" name="accept" value="Login">
   </form>
 
+  <input type="hidden" id="portalZone" value="$PORTAL_ZONE$">
   <script>
     "use strict";
 
-    // Set a unique configured zone ID for each router/portal zone.
-    const ZONE_ID = "";
+    const ZONE_ID = document.getElementById("portalZone").value.trim();
+    const zoneConfigured = () => Boolean(ZONE_ID) && !/^(?:\$PORTAL_ZONE\$|#PORTAL_ZONE#)$/.test(ZONE_ID);
     const API = {
       startPayment: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.start_payment",
       paymentStatus: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.check_payment_status",
@@ -382,7 +383,7 @@
       setPaymentBusy(false);
       $("payButtonText").textContent = "Loading packages...";
       try {
-        if (!ZONE_ID.trim()) {
+        if (!zoneConfigured()) {
           throw new Error("Payments are unavailable at this location. Please contact support.");
         }
         const packages = await postJson(API.packages, { zone_id: ZONE_ID });
@@ -714,7 +715,7 @@
     async function lookupExistingPayment() {
       if (lookupBusy || isSubmittingLogin) return;
       clearNotice("lookupNotice");
-      if (!ZONE_ID.trim()) {
+      if (!zoneConfigured()) {
         setNotice("lookupNotice", "Payment recovery is unavailable at this location. You can still connect with a voucher code.", "error");
         return;
       }
