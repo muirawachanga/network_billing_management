@@ -266,7 +266,7 @@ def _access_response(checkout):
     if voucher.portal_checkout != checkout.name or voucher.status != "Issued":
         return {
             "status": "INELIGIBLE", "access_ready": False,
-            "customer_message": "This voucher is not available. Contact support.",
+            "customer_message": "Your Wi-Fi access is unavailable. Please contact support.",
         }
     response.update({
         "access_ready": True,
@@ -275,7 +275,7 @@ def _access_response(checkout):
         "duration_minutes": checkout.duration_minutes,
         "expiry_authority": "pfsense",
         "customer_message": (
-            "Payment verified. pfSense will validate the voucher and its remaining usage."
+            "Payment verified. Please wait while your Wi-Fi connection is checked."
         ),
     })
     return response

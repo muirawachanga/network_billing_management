@@ -260,7 +260,7 @@
 
         <div class="panel tab-panel" id="panel-existing" role="tabpanel" aria-labelledby="tab-existing" hidden>
           <div class="section-label"><span>Recover your connection</span><span>No new payment</span></div>
-          <p class="lookup-copy">Enter the M-Pesa receipt code from your payment confirmation SMS. We’ll verify your package payment and submit its voucher. pfSense will check its remaining validity. Keep your receipt private. No phone number is needed.</p>
+          <p class="lookup-copy">Enter the M-Pesa receipt code from your payment confirmation SMS to reconnect using your remaining Wi-Fi access. Keep your receipt private. No phone number is needed.</p>
           <form id="lookupForm" novalidate>
             <label class="field-label" for="lookupValue">M-Pesa receipt code</label>
             <input class="field" id="lookupValue" name="lookup_value" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. QWE123ABC" maxlength="40" aria-describedby="lookupHint" required>
@@ -549,7 +549,7 @@
     function submitVoucher(voucher) {
       if (isSubmittingLogin) return;
       const cleanVoucher = String(voucher || "").trim();
-      if (!cleanVoucher) throw new Error("The server did not return a voucher. Please try again.");
+      if (!cleanVoucher) throw new Error("Your Wi-Fi access is not ready. Please try again or contact support.");
       isSubmittingLogin = true;
       $("authVoucher").value = cleanVoucher;
       // Keep pfSense's server-provided portal action and redirect fields intact.
@@ -639,7 +639,7 @@
         const status = serverStatus(result && result.status);
         if (status === "SUCCESS" && result.access_ready === true && typeof result.voucher === "string" && result.voucher.trim()) {
           setPaymentStep(3);
-          setPaymentStatus("Connecting your device", "Frappe has verified your payment and prepared your access. Submitting your voucher to pfSense…", true);
+          setPaymentStatus("Connecting your device", "Your payment is confirmed. Please wait while we connect you to Wi-Fi.", true);
           setTimeout(() => {
             try { submitVoucher(result.voucher); }
             catch (error) {
@@ -664,16 +664,16 @@
         }
         if (status === "SUCCESS") {
           setPaymentStep(3);
-          setPaymentStatus("Payment confirmed — preparing access", "Frappe has verified your payment. We’re waiting for your Wi-Fi voucher before connecting this device.", true);
+          setPaymentStatus("Payment confirmed — preparing access", "Your payment is confirmed. We’re preparing your Wi-Fi access. Please keep this page open.", true);
         } else if (status === "PENDING") {
           if (paymentStep < 3) {
             setPaymentStep(2);
-            setPaymentStatus("Waiting for M-Pesa confirmation", "Approve the prompt on your phone if it is still pending. This page checks Frappe automatically.", true);
+            setPaymentStatus("Waiting for M-Pesa confirmation", "Approve the prompt on your phone if it is still pending. We’ll check your payment automatically.", true);
           } else {
-            setPaymentStatus("Rechecking access readiness", "Your payment was previously confirmed. We’re waiting for Frappe to confirm that your Wi-Fi access is ready.", true);
+            setPaymentStatus("Rechecking access readiness", "Your payment was previously confirmed. We’re checking your Wi-Fi access. Please do not pay again.", true);
           }
         } else {
-          throw new Error("Frappe returned an unrecognized payment status.");
+          throw new Error("We could not confirm your payment status just now.");
         }
       } catch (error) {
         setPaymentStatus("Checking payment status", (error.message || "The status service could not be reached just now.") + " We’ll retry automatically without sending another STK Push.", true);
@@ -710,7 +710,7 @@
         });
         const status = serverStatus(result && result.status);
         if (status === "SUCCESS" && result.access_ready === true && typeof result.voucher === "string" && result.voucher.trim()) {
-          setLookupStatus("Payment verified", "Submitting your voucher. pfSense will check its remaining validity...", false);
+          setLookupStatus("Payment verified", "Reconnecting you to Wi-Fi. Please wait...", false);
           setTimeout(() => {
             try { submitVoucher(result.voucher); }
             catch (error) { setLookupStatus("Could not log in", error.message, false); }

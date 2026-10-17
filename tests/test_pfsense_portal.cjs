@@ -166,3 +166,18 @@ test("unknown and malformed server errors never expose internal details or claim
     assert.doesNotMatch(error.message, /traceback|password|unexpected failure|No payment was requested/);
   }
 });
+
+test("customer-facing copy does not expose platform names or voucher implementation", async () => {
+  const visibleMarkup = html
+    .replace(/<script>[\s\S]*?<\/script>/g, "")
+    .replace(/<style>[\s\S]*?<\/style>/g, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<[^>]*>/g, "");
+  assert.doesNotMatch(visibleMarkup, /pfsense|frappe|voucher/i);
+  const withoutComments = script.replace(/^\s*\/\/.*$/gm, "");
+  const messages = withoutComments.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g) || [];
+  for (const message of messages) {
+    if (/https?:|\/api\/|auth_voucher|authVoucher/.test(message)) continue;
+    assert.doesNotMatch(message, /pfsense|frappe|voucher/i);
+  }
+});
