@@ -331,7 +331,7 @@
     "use strict";
 
     // Set a unique configured zone ID for each router/portal zone.
-    const ZONE_ID = "default";
+    const ZONE_ID = "";
     const API = {
       startPayment: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.start_payment",
       paymentStatus: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.check_payment_status",
@@ -382,6 +382,9 @@
       setPaymentBusy(false);
       $("payButtonText").textContent = "Loading packages...";
       try {
+        if (!ZONE_ID.trim()) {
+          throw new Error("Payments are unavailable at this location. Please contact support.");
+        }
         const packages = await postJson(API.packages, { zone_id: ZONE_ID });
         if (!Array.isArray(packages) || packages.some(pkg =>
           !pkg || typeof pkg.package_id !== "string" || !pkg.package_id ||
@@ -711,6 +714,10 @@
     async function lookupExistingPayment() {
       if (lookupBusy || isSubmittingLogin) return;
       clearNotice("lookupNotice");
+      if (!ZONE_ID.trim()) {
+        setNotice("lookupNotice", "Payment recovery is unavailable at this location. You can still connect with a voucher code.", "error");
+        return;
+      }
       const rawValue = $("lookupValue").value.trim();
       if (!rawValue) {
         setNotice("lookupNotice", "Enter the M-Pesa receipt code from your confirmation SMS.", "error");

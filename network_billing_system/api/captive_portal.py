@@ -75,13 +75,15 @@ def _lock_voucher(name):
 
 
 def _zone(zone_id):
+    if not isinstance(zone_id, str) or not zone_id.strip():
+        frappe.throw("A Wi-Fi zone must be configured before requesting access.")
     if not frappe.db.exists("Captive Portal Zone", {"name": zone_id, "enabled": 1}):
         frappe.throw("Wi-Fi access is unavailable at this location. Please contact support.")
     return zone_id
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def get_packages(zone_id="default"):
+def get_packages(zone_id=None):
     _enabled()
     _request_limit("packages")
     zone_id = _zone(zone_id)
@@ -114,7 +116,7 @@ def get_packages(zone_id="default"):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id="default"):
+def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id=None):
     _enabled()
     _request_limit("start", limit=60, seconds=300)
     zone_id = _zone(zone_id)
@@ -293,7 +295,7 @@ def _access_response(checkout):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def check_payment_status(payment_token, zone_id="default"):
+def check_payment_status(payment_token, zone_id=None):
     _enabled()
     _request_limit("status", limit=1200)
     zone_id = _zone(zone_id)
@@ -324,7 +326,7 @@ def payment_callback(checkout_id, data=None, **kwargs):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def connect_existing_customer(lookup_type, lookup_value, zone_id="default"):
+def connect_existing_customer(lookup_type, lookup_value, zone_id=None):
     _enabled()
     _request_limit("receipt", limit=5, seconds=300)
     zone_id = _zone(zone_id)

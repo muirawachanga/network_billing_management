@@ -32,6 +32,10 @@ Create a **Captive Portal Zone** for each location or router zone, enable it,
 and select it on the location's packages and voucher imports. In each uploaded
 portal copy, set `ZONE_ID` to that record's exact ID. Package selection, payment,
 and receipt recovery use that location's inventory only.
+The template leaves `ZONE_ID` empty intentionally: billing operations are blocked
+until it is set. The APIs do not silently fall back to `default`. Existing
+portals with `ZONE_ID = "default"` must be updated for their actual location.
+Direct voucher login still works without this setting.
 
 Migration assigns existing records to the enabled `default` zone without
 changing their codes or payment status. Review this inventory before enabling

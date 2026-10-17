@@ -119,7 +119,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
 
         connector.start_portal_payment.side_effect = send
         result = self.api.start_payment(
-            "0712345678", "time_1hr", portal_action="https://untrusted.example"
+            "0712345678", "time_1hr", portal_action="https://untrusted.example", zone_id="default"
         )
         self.assertTrue(result["stk_push_sent"])
         self.assertIn("payment_token", result)
@@ -131,20 +131,20 @@ class TestCaptivePortalAPI(unittest.TestCase):
     def test_no_stock_does_not_start_payment(self):
         self.frappe.db.sql.return_value = []
         with self.assertRaisesRegex(ValueError, "no available vouchers"):
-            self.api.start_payment("0712345678", "time_1hr")
+            self.api.start_payment("0712345678", "time_1hr", zone_id="default")
         self.connector_class.assert_not_called()
         self.frappe.db.commit.assert_not_called()
 
     def test_disabled_package_does_not_start_payment(self):
         self.package.enabled = 0
         with self.assertRaisesRegex(ValueError, "not available"):
-            self.api.start_payment("0712345678", "time_1hr")
+            self.api.start_payment("0712345678", "time_1hr", zone_id="default")
         self.connector_class.assert_not_called()
 
     def test_ambiguous_timeout_preserves_token_and_reservation(self):
         self.frappe.db.sql.return_value = [Document(name="voucher-1")]
         self.connector_class.return_value.start_portal_payment.side_effect = requests.Timeout()
-        result = self.api.start_payment("0712345678", "time_1hr")
+        result = self.api.start_payment("0712345678", "time_1hr", zone_id="default")
         self.assertFalse(result["stk_push_sent"])
         self.assertIn("payment_token", result)
         self.frappe.log_error.assert_called_once()
@@ -154,7 +154,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.frappe.db.sql.return_value = [Document(name="voucher-1")]
         self.connector_class.side_effect = requests.Timeout()
         with self.assertRaisesRegex(ValueError, "No payment was requested"):
-            self.api.start_payment("0712345678", "time_1hr")
+            self.api.start_payment("0712345678", "time_1hr", zone_id="default")
         self.frappe.db.set_value.assert_not_called()
         self.frappe.db.commit.assert_not_called()
 
@@ -210,7 +210,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.frappe.db.get_value.return_value = "checkout-1"
         self.checkout.status = "SUCCESS"
         self.voucher.status = "Issued"
-        result = self.api.connect_existing_customer("mpesa_receipt", " qwe 123abc ")
+        result = self.api.connect_existing_customer("mpesa_receipt", " qwe 123abc ", zone_id="default")
         self.assertEqual(result["voucher"], "opaque-pfsense-code")
         self.frappe.db.get_value.assert_called_once_with(
             "Portal Checkout", {"mpesa_receipt": "QWE123ABC", "status": "SUCCESS", "zone": "default"}, "name"
@@ -218,7 +218,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
 
     def test_unmatched_receipt_does_not_allocate_or_start_payment(self):
         self.frappe.db.get_value.return_value = None
-        result = self.api.connect_existing_customer("mpesa_receipt", "QWE123ABC")
+        result = self.api.connect_existing_customer("mpesa_receipt", "QWE123ABC", zone_id="default")
         self.assertEqual(result["status"], "NOT_FOUND")
         self.connector_class.assert_not_called()
         self.frappe.db.set_value.assert_not_called()
@@ -238,6 +238,13 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.package.zone = "another-zone"
         with self.assertRaisesRegex(ValueError, "not available"):
             self.api.start_payment("0712345678", "time_1hr", zone_id="default")
+        self.connector_class.assert_not_called()
+
+    def test_missing_zone_never_falls_back_to_default(self):
+        for zone in (None, "", "   "):
+            with self.subTest(zone=zone), self.assertRaisesRegex(ValueError, "zone must be configured"):
+                self.api.start_payment("0712345678", "time_1hr", zone_id=zone)
+        self.frappe.get_doc.assert_not_called()
         self.connector_class.assert_not_called()
 
     def test_disabled_or_unknown_zone_cannot_list_packages(self):

@@ -7,7 +7,7 @@ const { test } = require("node:test");
 const html = fs.readFileSync(path.join(__dirname, "../pfsense/portal.html"), "utf8");
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
-function portal(packages) {
+function portal(packages, zone = "default") {
   class Element {
     constructor() {
       this.children = [];
@@ -53,7 +53,7 @@ function portal(packages) {
       return { ok, json: async () => ok ? ({ message: response }) : response };
     },
   });
-  vm.runInContext(script, context);
+  vm.runInContext(script.replace('const ZONE_ID = "";', `const ZONE_ID = ${JSON.stringify(zone)};`), context);
   return {
     element, calls,
     run: expression => vm.runInContext(expression, context),
@@ -221,4 +221,17 @@ test("recovery selection displays only the chosen field and action", async () =>
   assert.equal(page.element("voucherRecovery").hidden, false);
   assert.equal(page.element("receiptRecovery").hidden, true);
   assert.doesNotMatch(html, /Good Wi-Fi|Good to go|Fast activation|Easy reconnection/);
+});
+
+test("unconfigured zone cannot use default inventory but direct voucher still works", async () => {
+  const page = portal(catalogue, "");
+  await page.ready();
+  assert.equal(page.calls.length, 0);
+  assert.equal(page.element("payButton").disabled, true);
+  await page.run("lookupExistingPayment()");
+  assert.equal(page.calls.length, 0);
+  page.element("voucherValue").value = "existing-code";
+  page.run("connectWithVoucher()");
+  assert.equal(page.element("loginForm").submitted, true);
+  assert.equal(page.calls.length, 0);
 });
