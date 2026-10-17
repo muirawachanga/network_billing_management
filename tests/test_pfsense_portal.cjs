@@ -210,3 +210,15 @@ test("blank voucher stays on page and failed submission can be retried", async (
   assert.equal(page.run("isSubmittingLogin"), false);
   assert.match(page.element("voucherNotice").textContent, /Could not connect/);
 });
+
+test("recovery selection displays only the chosen field and action", async () => {
+  const page = portal([]);
+  await page.ready();
+  page.run('selectRecoveryMethod("receipt")');
+  assert.equal(page.element("voucherRecovery").hidden, true);
+  assert.equal(page.element("receiptRecovery").hidden, false);
+  page.run('selectRecoveryMethod("voucher")');
+  assert.equal(page.element("voucherRecovery").hidden, false);
+  assert.equal(page.element("receiptRecovery").hidden, true);
+  assert.doesNotMatch(html, /Good Wi-Fi|Good to go|Fast activation|Easy reconnection/);
+});
