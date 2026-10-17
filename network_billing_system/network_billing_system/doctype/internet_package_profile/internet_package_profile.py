@@ -18,6 +18,10 @@ class InternetPackageProfile(Document):
         if cint(self.duration_minutes) <= 0:
             frappe.throw("Voucher duration must be greater than zero minutes.")
         previous = self.get_doc_before_save()
+        if previous and previous.get("zone") != self.get("zone") and frappe.db.exists(
+            "Captive Portal Code", {"package": self.name}
+        ):
+            frappe.throw("This package has vouchers. Create a new package for another zone.")
         if (
             previous
             and previous.duration_minutes != self.duration_minutes

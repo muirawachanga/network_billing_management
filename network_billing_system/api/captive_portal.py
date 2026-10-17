@@ -74,13 +74,20 @@ def _lock_voucher(name):
     return frappe.get_doc(dict(rows[0], doctype="Captive Portal Code"))
 
 
+def _zone(zone_id):
+    if not frappe.db.exists("Captive Portal Zone", {"name": zone_id, "enabled": 1}):
+        frappe.throw("Wi-Fi access is unavailable at this location. Please contact support.")
+    return zone_id
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def get_packages():
+def get_packages(zone_id="default"):
     _enabled()
     _request_limit("packages")
+    zone_id = _zone(zone_id)
     packages = frappe.get_all(
         "Internet Package Profile",
-        filters={"enabled": 1},
+        filters={"enabled": 1, "zone": zone_id},
         fields=["name", "display_name", "description", "price", "duration_minutes"],
         order_by="price asc, name asc",
     )
@@ -96,6 +103,7 @@ def get_packages():
                 "Captive Portal Code",
                 {
                     "package": package.name, "status": "Active", "sms_sent": 0,
+                    "zone": zone_id,
                     "duration_minutes": package.duration_minutes,
                     "portal_checkout": ["is", "not set"],
                 },
@@ -106,9 +114,10 @@ def get_packages():
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def start_payment(phone, package_id, portal_action=None, redirurl=None):
+def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id="default"):
     _enabled()
     _request_limit("start", limit=60, seconds=300)
+    zone_id = _zone(zone_id)
     try:
         phone = normalize_phone(phone)
     except ValueError as error:
@@ -116,7 +125,7 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None):
     _throttle("phone", phone, limit=3, seconds=300)
     # URLs from the browser are deliberately not used for server-side requests.
     package = frappe.get_doc("Internet Package Profile", package_id)
-    if not package.enabled or flt(package.price) <= 0 or package.duration_minutes <= 0:
+    if package.zone != zone_id or not package.enabled or flt(package.price) <= 0 or package.duration_minutes <= 0:
         frappe.throw("This package is not available.")
     environment = load_configuration("env")
     till = str(load_configuration("till_number") or "").lstrip("K")
@@ -134,6 +143,7 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None):
     checkout = frappe.get_doc({
         "doctype": "Portal Checkout",
         "package": package.name,
+        "zone": zone_id,
         "mobile_number": phone,
         "amount": package.price,
         "currency": "KES",
@@ -146,11 +156,11 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None):
     vouchers = frappe.db.sql(
         """
         select name from `tabCaptive Portal Code`
-        where package=%s and duration_minutes=%s and status='Active'
+        where package=%s and duration_minutes=%s and zone=%s and status='Active'
           and sms_sent=0 and ifnull(portal_checkout, '')=''
         order by creation asc, name asc limit 1 for update
         """,
-        (package.name, package.duration_minutes),
+        (package.name, package.duration_minutes, zone_id),
         as_dict=True,
     )
     if not vouchers:
@@ -213,13 +223,13 @@ def _refresh(checkout, candidate_id=None):
         checkout.mpesa_receipt = result["receipt"]
         checkout.confirmed_at = now_datetime()
         voucher = _lock_voucher(checkout.voucher)
-        if voucher.portal_checkout != checkout.name or voucher.status != "Reserved":
+        if voucher.zone != checkout.zone or voucher.portal_checkout != checkout.name or voucher.status != "Reserved":
             frappe.throw("The reserved voucher is unavailable. Contact support; do not pay again.")
         frappe.db.set_value("Captive Portal Code", voucher.name, "status", "Issued")
         _record_payment(checkout, result["resource"])
     elif checkout.status in ("FAILED", "CANCELLED"):
         voucher = _lock_voucher(checkout.voucher)
-        if voucher.portal_checkout != checkout.name or voucher.status != "Reserved":
+        if voucher.zone != checkout.zone or voucher.portal_checkout != checkout.name or voucher.status != "Reserved":
             frappe.throw("The reserved voucher has changed. Contact support.")
         frappe.db.set_value("Captive Portal Code", checkout.voucher, {
             "status": "Active", "portal_checkout": None,
@@ -263,7 +273,7 @@ def _access_response(checkout):
     if checkout.status != "SUCCESS":
         return response
     voucher = _lock_voucher(checkout.voucher)
-    if voucher.portal_checkout != checkout.name or voucher.status != "Issued":
+    if voucher.zone != checkout.zone or voucher.portal_checkout != checkout.name or voucher.status != "Issued":
         return {
             "status": "INELIGIBLE", "access_ready": False,
             "customer_message": "Your Wi-Fi access is unavailable. Please contact support.",
@@ -272,6 +282,7 @@ def _access_response(checkout):
         "access_ready": True,
         "voucher": voucher.code,
         "package_id": checkout.package,
+        "zone_id": checkout.zone,
         "duration_minutes": checkout.duration_minutes,
         "expiry_authority": "pfsense",
         "customer_message": (
@@ -282,13 +293,18 @@ def _access_response(checkout):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def check_payment_status(payment_token):
+def check_payment_status(payment_token, zone_id="default"):
     _enabled()
     _request_limit("status", limit=1200)
+    zone_id = _zone(zone_id)
     name = _checkout_for_token(payment_token)
     if not name:
         return {"status": "NOT_FOUND", "access_ready": False}
-    return _access_response(_refresh(_lock_checkout(name)))
+    checkout = _lock_checkout(name)
+    if checkout.zone != zone_id:
+        return {"status": "INELIGIBLE", "access_ready": False,
+                "customer_message": "This payment belongs to a different Wi-Fi location."}
+    return _access_response(_refresh(checkout))
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -308,16 +324,17 @@ def payment_callback(checkout_id, data=None, **kwargs):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def connect_existing_customer(lookup_type, lookup_value):
+def connect_existing_customer(lookup_type, lookup_value, zone_id="default"):
     _enabled()
     _request_limit("receipt", limit=5, seconds=300)
+    zone_id = _zone(zone_id)
     if lookup_type != "mpesa_receipt":
         frappe.throw("Only M-Pesa receipt recovery is supported.")
     receipt = re.sub(r"\s+", "", str(lookup_value or "")).upper()
     if not re.fullmatch(r"(?=.*[A-Z])(?=.*\d)[A-Z0-9]{8,20}", receipt):
         frappe.throw("Enter a valid M-Pesa receipt code.")
     name = frappe.db.get_value("Portal Checkout", {
-        "mpesa_receipt": receipt, "status": "SUCCESS",
+        "mpesa_receipt": receipt, "status": "SUCCESS", "zone": zone_id,
     }, "name")
     if not name:
         return {

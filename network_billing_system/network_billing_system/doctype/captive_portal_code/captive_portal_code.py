@@ -19,10 +19,13 @@ class CaptivePortalCode(Document):
         previous = self.get_doc_before_save()
         if previous and previous.portal_checkout and any(
             previous.get(field) != self.get(field)
-            for field in ("code", "package", "duration_minutes", "portal_checkout")
+            for field in ("code", "package", "zone", "duration_minutes", "portal_checkout")
         ):
             frappe.throw("An allocated voucher cannot be reassigned or changed.")
         if self.package:
+            package_zone = frappe.db.get_value("Internet Package Profile", self.package, "zone")
+            if not self.zone or self.zone != package_zone:
+                frappe.throw("Voucher zone must match the selected package's zone.")
             self.duration_minutes = frappe.db.get_value(
                 "Internet Package Profile", self.package, "duration_minutes"
             )

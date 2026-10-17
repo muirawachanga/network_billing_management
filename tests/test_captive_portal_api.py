@@ -70,16 +70,16 @@ class TestCaptivePortalAPI(unittest.TestCase):
             spec.loader.exec_module(self.api)
         self.checkout = Document(
             name="checkout-1", status="PENDING", voucher="voucher-1",
-            package="time_1hr", mobile_number="+254712345678", amount=5,
+            package="time_1hr", zone="default", mobile_number="+254712345678", amount=5,
             duration_minutes=60, till_number="123456", provider_environment="sandbox",
             provider_payment_id="a652f86f-f2aa-4d70-baa2-ccfe4b78f4fc",
         )
         self.voucher = Document(
             name="voucher-1", code="opaque-pfsense-code", package="time_1hr",
-            status="Reserved", portal_checkout="checkout-1",
+            status="Reserved", zone="default", portal_checkout="checkout-1",
         )
         self.package = Document(
-            name="time_1hr", enabled=1, price=5, duration_minutes=60,
+            name="time_1hr", zone="default", enabled=1, price=5, duration_minutes=60,
         )
         self.frappe.get_doc.side_effect = self._get_doc
         self.api._lock_voucher = MagicMock(return_value=self.voucher)
@@ -213,7 +213,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
         result = self.api.connect_existing_customer("mpesa_receipt", " qwe 123abc ")
         self.assertEqual(result["voucher"], "opaque-pfsense-code")
         self.frappe.db.get_value.assert_called_once_with(
-            "Portal Checkout", {"mpesa_receipt": "QWE123ABC", "status": "SUCCESS"}, "name"
+            "Portal Checkout", {"mpesa_receipt": "QWE123ABC", "status": "SUCCESS", "zone": "default"}, "name"
         )
 
     def test_unmatched_receipt_does_not_allocate_or_start_payment(self):
@@ -233,3 +233,46 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.frappe.cache.return_value.incr.return_value = 4
         with self.assertRaisesRegex(ValueError, "Too many requests"):
             self.api._throttle("phone", "+254712345678", 3, 300)
+
+    def test_wrong_zone_package_cannot_start_payment(self):
+        self.package.zone = "another-zone"
+        with self.assertRaisesRegex(ValueError, "not available"):
+            self.api.start_payment("0712345678", "time_1hr", zone_id="default")
+        self.connector_class.assert_not_called()
+
+    def test_disabled_or_unknown_zone_cannot_list_packages(self):
+        self.frappe.db.exists.return_value = False
+        with self.assertRaisesRegex(ValueError, "unavailable at this location"):
+            self.api.get_packages(zone_id="unknown")
+        self.frappe.get_all.assert_not_called()
+
+    def test_stock_query_and_checkout_record_the_requested_zone(self):
+        self.package.zone = "north"
+        self.frappe.db.sql.return_value = [Document(name="voucher-1")]
+        self.api._lock_checkout = MagicMock(return_value=Document(provider_payment_id=None))
+        self.connector_class.return_value.start_portal_payment.return_value = self.checkout.provider_payment_id
+        self.api.start_payment("0712345678", "time_1hr", zone_id="north")
+        self.assertEqual(self.frappe.db.sql.call_args.args[1], ("time_1hr", 60, "north"))
+        sent_checkout = self.connector_class.return_value.start_portal_payment.call_args.args[0]
+        self.assertEqual(sent_checkout.zone, "north")
+
+    def test_status_from_another_zone_does_not_return_code_or_query_provider(self):
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        result = self.api.check_payment_status(self.api._token("checkout-1"), zone_id="south")
+        self.assertEqual(result["status"], "INELIGIBLE")
+        self.assertNotIn("voucher", result)
+        self.connector_class.assert_not_called()
+
+    def test_wrong_zone_voucher_cannot_be_returned(self):
+        self.checkout.status = "SUCCESS"
+        self.voucher.status = "Issued"
+        self.voucher.zone = "other"
+        self.assertFalse(self.api._access_response(self.checkout)["access_ready"])
+
+    def test_receipt_recovery_filters_requested_zone(self):
+        self.frappe.db.get_value.return_value = None
+        result = self.api.connect_existing_customer("mpesa_receipt", "QWE123ABC", zone_id="north")
+        self.frappe.db.get_value.assert_called_once_with(
+            "Portal Checkout", {"mpesa_receipt": "QWE123ABC", "status": "SUCCESS", "zone": "north"}, "name"
+        )
+        self.assertNotIn("voucher", result)

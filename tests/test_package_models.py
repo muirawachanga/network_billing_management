@@ -51,14 +51,16 @@ class TestPackageModels(unittest.TestCase):
 
     def test_voucher_copies_package_duration(self):
         module = self.load_controller("captive_portal_code")
-        self.frappe.db.get_value.return_value = 120
+        self.frappe.db.get_value.side_effect = lambda doctype, name, field: (
+            "default" if field == "zone" else 120
+        )
         voucher = module.CaptivePortalCode(
-            code="  generated-voucher  ", package="time_2hrs", duration_minutes=None
+            code="  generated-voucher  ", package="time_2hrs", zone="default", duration_minutes=None
         )
         voucher.validate()
         self.assertEqual(voucher.code, "generated-voucher")
         self.assertEqual(voucher.duration_minutes, 120)
-        self.frappe.db.get_value.assert_called_once_with(
+        self.frappe.db.get_value.assert_any_call(
             "Internet Package Profile", "time_2hrs", "duration_minutes"
         )
 

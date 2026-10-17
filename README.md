@@ -23,3 +23,20 @@ tabs, labelled inputs, and status messages.
 
 The uploadable page is `pfsense/portal.html`. It contains its own styling and
 JavaScript and is uploaded manually to pfSense, not served as a Frappe page.
+
+## Wi-Fi locations
+
+Create a **Captive Portal Zone** for each location or router zone, enable it,
+and select it on the location's packages and voucher imports. In each uploaded
+portal copy, set `ZONE_ID` to that record's exact ID. Package selection, payment,
+and receipt recovery use that location's inventory only.
+
+Migration assigns existing records to the enabled `default` zone without
+changing their codes or payment status. Review this inventory before enabling
+additional locations. Create separate packages for different zones; packages
+with imported vouchers cannot be moved between zones.
+
+The page's zone ID identifies inventory; it is not proof of the device's
+physical location. Enforcing device location requires trusted router-side
+integration. Use unique zone IDs across routers even if their local zone names
+are the same.

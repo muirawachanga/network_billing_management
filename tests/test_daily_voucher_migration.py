@@ -127,5 +127,8 @@ class TestDailyVoucherMigration(unittest.TestCase):
         self.assertEqual(list(parser["pre_model_sync"]), [])
         self.assertEqual(
             list(parser["post_model_sync"]),
-            ["network_billing_system.patches.migrate_daily_vouchers_to_eight_hours"],
+            [
+                "network_billing_system.patches.assign_legacy_portal_zone",
+                "network_billing_system.patches.migrate_daily_vouchers_to_eight_hours",
+            ],
         )

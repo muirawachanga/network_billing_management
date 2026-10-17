@@ -9,6 +9,7 @@
   "status",
   "code",
   "package",
+  "zone",
   "duration_minutes",
   "portal_checkout",
   "extra_details_section",
@@ -17,6 +18,15 @@
   "expiry_duration"
  ],
  "fields": [
+  {
+   "fieldname": "zone",
+   "fieldtype": "Link",
+   "options": "Captive Portal Zone",
+   "label": "Zone",
+   "reqd": 1,
+   "search_index": 1,
+   "in_list_view": 1
+  },
   {
    "fieldname": "code",
    "fieldtype": "Data",
@@ -80,7 +90,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-15 18:31:19.739000",
+ "modified": "2026-10-17 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Captive Portal Code",

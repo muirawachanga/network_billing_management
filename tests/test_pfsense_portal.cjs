@@ -73,6 +73,7 @@ test("loads server packages and prices; preserves unavailable state after paymen
   assert.equal(page.element("payButton").disabled, true);
   await page.ready();
   assert.match(page.calls[0].url, /network_billing_system\.api\.captive_portal\.get_packages$/);
+  assert.equal(page.calls[0].payload.zone_id, "default");
   assert.equal(page.element("payButtonText").textContent, "Pay KSh 35 with M-Pesa");
   assert.equal(page.element("payButton").disabled, false);
   const sold = page.element("packageGrid").children[1];

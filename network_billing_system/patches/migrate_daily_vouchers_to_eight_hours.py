@@ -25,6 +25,7 @@ def execute():
         frappe.get_doc({
             "doctype": "Internet Package Profile",
             "package_name": package_name,
+            "zone": "default",
             "display_name": "8 Hours",
             "price": 30,
             "duration_minutes": 480,

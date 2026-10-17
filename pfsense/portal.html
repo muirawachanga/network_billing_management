@@ -324,6 +324,8 @@
   <script>
     "use strict";
 
+    // Set a unique configured zone ID for each router/portal zone.
+    const ZONE_ID = "default";
     const API = {
       startPayment: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.start_payment",
       paymentStatus: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.check_payment_status",
@@ -374,7 +376,7 @@
       setPaymentBusy(false);
       $("payButtonText").textContent = "Loading packages...";
       try {
-        const packages = await postJson(API.packages, {});
+        const packages = await postJson(API.packages, { zone_id: ZONE_ID });
         if (!Array.isArray(packages) || packages.some(pkg =>
           !pkg || typeof pkg.package_id !== "string" || !pkg.package_id ||
           typeof pkg.label !== "string" || pkg.currency !== "KES" ||
@@ -594,6 +596,7 @@
         const result = await postJson(API.startPayment, {
           phone: phone,
           package_id: selectedPackage,
+          zone_id: ZONE_ID,
           portal_action: $("loginForm").getAttribute("action"),
           redirurl: $("redirurl").value
         });
@@ -635,7 +638,7 @@
         return;
       }
       try {
-        const result = await postJson(API.paymentStatus, { payment_token: activePaymentToken });
+        const result = await postJson(API.paymentStatus, { payment_token: activePaymentToken, zone_id: ZONE_ID });
         const status = serverStatus(result && result.status);
         if (status === "SUCCESS" && result.access_ready === true && typeof result.voucher === "string" && result.voucher.trim()) {
           setPaymentStep(3);
@@ -706,6 +709,7 @@
       try {
         const result = await postJson(API.existingPayment, {
           lookup_type: "mpesa_receipt",
+          zone_id: ZONE_ID,
           lookup_value: lookupValue
         });
         const status = serverStatus(result && result.status);

@@ -10,12 +10,20 @@
   "column_break_2",
   "status",
   "package",
+  "zone",
   "expiry_duration",
   "import_details_section",
   "import_log",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "zone",
+   "fieldtype": "Link",
+   "options": "Captive Portal Zone",
+   "label": "Zone",
+   "reqd": 1
+  },
   {
    "fieldname": "status",
    "fieldtype": "Select",
@@ -70,7 +78,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-15 18:31:19.739000",
+ "modified": "2026-10-17 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Import Captive Code",
