@@ -332,7 +332,8 @@
     "use strict";
 
     const ZONE_ID = document.getElementById("portalZone").value.trim();
-    const zoneConfigured = () => Boolean(ZONE_ID) && !/^(?:\$PORTAL_ZONE\$|#PORTAL_ZONE#)$/.test(ZONE_ID);
+    const zoneConfigured = () => Boolean(ZONE_ID) &&
+      !["$", "#"].some(marker => ZONE_ID === marker + "PORTAL_ZONE" + marker);
     const API = {
       startPayment: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.start_payment",
       paymentStatus: "https://mel.daitkenya.com/api/method/network_billing_system.api.captive_portal.check_payment_status",

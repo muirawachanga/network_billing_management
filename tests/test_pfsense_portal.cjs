@@ -7,7 +7,7 @@ const { test } = require("node:test");
 const html = fs.readFileSync(path.join(__dirname, "../pfsense/portal.html"), "utf8");
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
-function portal(packages, zone = "default") {
+function portal(packages, zone = "default", renderRouterTemplate = false) {
   class Element {
     constructor() {
       this.children = [];
@@ -54,7 +54,10 @@ function portal(packages, zone = "default") {
     },
   });
   element("portalZone").value = zone;
-  vm.runInContext(script, context);
+  const renderedScript = renderRouterTemplate
+    ? script.replaceAll("$PORTAL_ZONE$", zone).replaceAll("#PORTAL_ZONE#", zone)
+    : script;
+  vm.runInContext(renderedScript, context);
   return {
     element, calls,
     run: expression => vm.runInContext(expression, context),
@@ -258,4 +261,13 @@ test("unexpanded router placeholders never reach billing APIs", async () => {
     assert.equal(page.calls.length, 0);
     assert.equal(page.element("payButton").disabled, true);
   }
+});
+
+test("router-wide placeholder replacement does not reject the resolved zone", async () => {
+  const page = portal(catalogue, "guest_wifi", true);
+  await page.ready();
+  assert.equal(page.run("zoneConfigured()"), true);
+  assert.equal(page.calls.length, 1);
+  assert.equal(page.calls[0].payload.zone_id, "guest_wifi");
+  assert.equal(page.element("payButton").disabled, false);
 });
