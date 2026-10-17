@@ -1,0 +1,19 @@
+{
+ "doctype": "DocType",
+ "name": "Captive Portal Zone",
+ "module": "Network Billing System",
+ "autoname": "field:zone_id",
+ "engine": "InnoDB",
+ "modified": "2026-10-17 08:00:00.000000",
+ "field_order": ["zone_id", "display_name", "enabled", "description"],
+ "fields": [
+  {"fieldname": "zone_id", "fieldtype": "Data", "label": "Zone ID", "reqd": 1, "unique": 1},
+  {"fieldname": "display_name", "fieldtype": "Data", "label": "Display Name"},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "0"},
+  {"fieldname": "description", "fieldtype": "Small Text", "label": "Description"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1, "report": 1},
+  {"role": "Network Administrator", "create": 1, "read": 1, "write": 1, "report": 1}
+ ]
+}

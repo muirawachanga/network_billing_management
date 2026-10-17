@@ -114,6 +114,14 @@ app_license = "MIT"
 # Scheduled Tasks
 # ---------------
 
+scheduler_events = {
+    "cron": {
+        "* * * * *": [
+            "network_billing_system.api.captive_portal.reconcile_pending_payments"
+        ]
+    }
+}
+
 #scheduler_events = {
 #    "cron": {
 #       "0/2 * * * *": [
