@@ -174,11 +174,39 @@ test("customer-facing copy does not expose platform names or voucher implementat
     .replace(/<style>[\s\S]*?<\/style>/g, "")
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]*>/g, "");
-  assert.doesNotMatch(visibleMarkup, /pfsense|frappe|voucher/i);
+  assert.doesNotMatch(visibleMarkup, /pfsense|frappe/i);
   const withoutComments = script.replace(/^\s*\/\/.*$/gm, "");
   const messages = withoutComments.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g) || [];
   for (const message of messages) {
     if (/https?:|\/api\/|auth_voucher|authVoucher/.test(message)) continue;
-    assert.doesNotMatch(message, /pfsense|frappe|voucher/i);
+    assert.doesNotMatch(message, /pfsense|frappe/i);
   }
+});
+
+test("direct voucher login works after billing failure without making any API request", async () => {
+  const page = portal([]);
+  await page.ready();
+  page.reject({ message: "Billing service unavailable" });
+  page.element("voucherValue").value = "  Legacy-AbC-123  ";
+  const requestsBefore = page.calls.length;
+  page.element("voucherForm").listeners.submit({ preventDefault() {} });
+  assert.equal(page.calls.length, requestsBefore);
+  assert.equal(page.element("authVoucher").value, "Legacy-AbC-123");
+  assert.equal(page.element("loginForm").submitted, true);
+  assert.equal(page.element("voucherButton").disabled, true);
+});
+
+test("blank voucher stays on page and failed submission can be retried", async () => {
+  const page = portal([]);
+  await page.ready();
+  page.element("voucherValue").value = "   ";
+  page.run("connectWithVoucher()");
+  assert.equal(page.element("loginForm").submitted, undefined);
+  assert.match(page.element("voucherNotice").textContent, /Enter your voucher/);
+  page.element("voucherValue").value = "code";
+  page.element("loginForm").submit = () => { throw new Error("failed"); };
+  page.run("connectWithVoucher()");
+  assert.equal(page.element("voucherButton").disabled, false);
+  assert.equal(page.run("isSubmittingLogin"), false);
+  assert.match(page.element("voucherNotice").textContent, /Could not connect/);
 });

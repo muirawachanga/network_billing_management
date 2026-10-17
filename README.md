@@ -11,8 +11,10 @@ M-Pesa, and reconnecting after payment.
   the payment prompt on the phone.
 - **Payment progress:** Follow payment confirmation and automatic submission
   of the Wi-Fi voucher for login.
-- **Already paid:** Enter an M-Pesa receipt code to retrieve the allocated
-  voucher and submit it again. pfSense checks its remaining validity.
+- **Already paid:** Connect directly with an existing voucher code, even when
+  the billing service is unavailable. Alternatively, use an M-Pesa receipt to
+  recover access through the payment service. The captive portal checks voucher
+  validity; receipt recovery requires the billing service to be available.
 - **Clear feedback:** Payment unavailability appears with a red heading and
   border, retry guidance, and a "Close and try later" button.
 

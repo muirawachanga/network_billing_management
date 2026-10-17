@@ -211,7 +211,7 @@
       <section class="intro" aria-label="FamilyBox Wi-Fi introduction">
         <div class="eyebrow"><span>✦</span> Your connection starts here</div>
         <h1>Good Wi-Fi.<br>Good to go.</h1>
-        <p class="intro-copy">Choose a time bundle, pay securely with M-Pesa, and get connected automatically. Already paid? Reconnect using the M-Pesa receipt code from your confirmation SMS.</p>
+        <p class="intro-copy">Choose a time bundle, pay securely with M-Pesa, and get connected automatically. Already paid? Reconnect using your voucher or M-Pesa receipt code.</p>
         <ul class="feature-list">
           <li><span class="feature-icon">↗</span><span><strong>Fast activation</strong>Connect automatically after your payment is confirmed.</span></li>
           <li><span class="feature-icon">▣</span><span><strong>Easy M-Pesa payment</strong>Approve the prompt on your phone.</span></li>
@@ -260,6 +260,14 @@
 
         <div class="panel tab-panel" id="panel-existing" role="tabpanel" aria-labelledby="tab-existing" hidden>
           <div class="section-label"><span>Recover your connection</span><span>No new payment</span></div>
+          <form id="voucherForm" novalidate>
+            <label class="field-label" for="voucherValue">Have a voucher code?</label>
+            <input class="field" id="voucherValue" name="voucher_code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="voucherHint" required>
+            <p class="hint" id="voucherHint">Enter your voucher exactly as provided. You can use it even when the payment service is unavailable.</p>
+            <button type="submit" class="primary-btn" id="voucherButton">Connect with voucher</button>
+          </form>
+          <div class="notice" id="voucherNotice" role="status" aria-live="polite"></div>
+          <div class="divider"></div>
           <p class="lookup-copy">Enter the M-Pesa receipt code from your payment confirmation SMS to reconnect using your remaining Wi-Fi access. Keep your receipt private. No phone number is needed.</p>
           <form id="lookupForm" novalidate>
             <label class="field-label" for="lookupValue">M-Pesa receipt code</label>
@@ -567,6 +575,24 @@
       return String(value || "").toUpperCase();
     }
 
+    function connectWithVoucher() {
+      if (isSubmittingLogin) return;
+      clearNotice("voucherNotice");
+      const voucher = $("voucherValue").value.trim();
+      if (!voucher) {
+        setNotice("voucherNotice", "Enter your voucher code to connect.", "error");
+        $("voucherValue").focus();
+        return;
+      }
+      $("voucherButton").disabled = true;
+      try {
+        submitVoucher(voucher);
+      } catch (error) {
+        $("voucherButton").disabled = false;
+        setNotice("voucherNotice", "Could not connect. Please try again.", "error");
+      }
+    }
+
     async function startPayment() {
       if (paymentBusy || isSubmittingLogin) return;
       clearNotice("payNotice");
@@ -748,7 +774,7 @@
       $("tab-existing").tabIndex = isNew ? -1 : 0;
       $("panel-new").hidden = !isNew;
       $("panel-existing").hidden = isNew;
-      if (!isNew) $("lookupValue").focus();
+      if (!isNew) $("voucherValue").focus();
     }
 
     $("reloadPackagesButton").addEventListener("click", loadPackages);
@@ -777,6 +803,10 @@
       event.preventDefault();
       lookupExistingPayment();
     });
+    $("voucherForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      connectWithVoucher();
+    });
     $("viewPaymentButton").addEventListener("click", openPaymentDialog);
     $("hidePaymentButton").addEventListener("click", () => $("paymentStatus").close());
     $("paymentStatus").addEventListener("close", () => {
@@ -785,6 +815,7 @@
     $("receiptRecoveryButton").addEventListener("click", () => {
       $("paymentStatus").close();
       activateTab("existing");
+      $("lookupValue").focus();
     });
     $("retryStatusButton").addEventListener("click", () => {
       if (activePaymentToken) {
