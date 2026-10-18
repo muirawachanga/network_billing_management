@@ -76,7 +76,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
         )
         self.voucher = Document(
             name="voucher-1", code="opaque-pfsense-code", package="time_1hr",
-            status="Reserved", zone="default", portal_checkout="checkout-1",
+            status="Reserved", zone="default", duration_minutes=60, portal_checkout="checkout-1",
         )
         self.package = Document(
             name="time_1hr", zone="default", enabled=1, price=5, duration_minutes=60,
@@ -182,6 +182,59 @@ class TestCaptivePortalAPI(unittest.TestCase):
             {"status": "Active", "portal_checkout": None},
         )
 
+    def test_late_verified_success_recovers_failed_checkout_with_matching_stock(self):
+        self.api._record_payment = MagicMock()
+        with patch.object(self.api, "confirmed_payment", return_value={"status": "FAILED"}):
+            self.api._refresh(self.checkout)
+        self.assertIsNone(self.checkout.voucher)
+        # The original code may already belong to another customer. Recovery
+        # selects only available matching inventory, never the old code by ID.
+        self.frappe.db.sql.return_value = [Document(name="replacement")]
+        self.voucher.name = "replacement"
+        self.frappe.db.set_value.reset_mock()
+        with patch.object(self.api, "confirmed_payment", return_value={
+            "status": "SUCCESS", "receipt": "QWE123ABC", "resource": {},
+        }) as verify:
+            self.api._refresh(self.checkout, force=True)
+            self.api._refresh(self.checkout, force=True)
+        verify.assert_called_once()
+        self.assertEqual(self.checkout.status, "SUCCESS")
+        self.assertEqual(self.checkout.voucher, "replacement")
+        self.assertEqual(self.frappe.db.sql.call_args.args[1], ("time_1hr", 60, "default"))
+        self.api._record_payment.assert_called_once()
+        self.assertTrue(all(
+            call.args[1] == "replacement" for call in self.frappe.db.set_value.call_args_list
+        ))
+
+    def test_late_success_without_stock_stays_paid_and_can_allocate_after_restock(self):
+        self.checkout.status = "FAILED"
+        self.checkout.voucher = None
+        self.api._record_payment = MagicMock()
+        self.frappe.db.sql.return_value = []
+        with patch.object(self.api, "confirmed_payment", return_value={
+            "status": "SUCCESS", "receipt": "QWE123ABC", "resource": {},
+        }):
+            self.api._refresh(self.checkout, force=True)
+        self.assertEqual(self.checkout.status, "SUCCESS")
+        result = self.api._access_response(self.checkout)
+        self.assertFalse(result["access_ready"])
+        self.assertNotIn("voucher", result)
+        self.assertIn("do not pay again", result["customer_message"])
+        self.frappe.db.sql.return_value = [Document(name="voucher-1")]
+        self.api._refresh(self.checkout)
+        self.assertEqual(self.checkout.voucher, "voucher-1")
+
+    def test_force_recheck_bypasses_throttle_but_never_trusts_callback_status(self):
+        self.checkout.status = "FAILED"
+        self.checkout.voucher = None
+        self.checkout.last_checked_at = datetime(2026, 10, 15, 12, 0, 0)
+        with patch.object(self.api, "confirmed_payment", return_value={"status": "FAILED"}) as verify:
+            self.api._refresh(self.checkout, force=True)
+        self.connector_class.return_value.get_portal_payment.assert_called_once()
+        verify.assert_called_once()
+        self.assertEqual(self.checkout.status, "FAILED")
+        self.frappe.db.set_value.assert_not_called()
+
     def test_mismatched_reservation_is_not_released(self):
         self.voucher.portal_checkout = "other-checkout"
         with patch.object(self.api, "confirmed_payment", return_value={"status": "FAILED"}):
@@ -227,7 +280,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)
         self.api._refresh = MagicMock()
         self.api.payment_callback("checkout-1", {"attributes": {"status": "Success"}})
-        self.api._refresh.assert_called_once_with(self.checkout, None)
+        self.api._refresh.assert_called_once_with(self.checkout, None, force=True)
 
     def test_rate_limit_rejects_excess_requests(self):
         self.frappe.cache.return_value.incr.return_value = 4

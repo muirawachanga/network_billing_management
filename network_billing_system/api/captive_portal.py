@@ -204,13 +204,49 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id=
     return {"payment_token": token, "stk_push_sent": True}
 
 
-def _refresh(checkout, candidate_id=None):
-    if checkout.status != "PENDING":
+def _prepare_paid_access(checkout):
+    if not checkout.voucher:
+        available = frappe.db.sql(
+            """
+            select name from `tabCaptive Portal Code`
+            where package=%s and duration_minutes=%s and zone=%s and status='Active'
+              and sms_sent=0 and ifnull(portal_checkout, '')=''
+            order by creation asc, name asc limit 1 for update
+            """,
+            (checkout.package, checkout.duration_minutes, checkout.zone),
+            as_dict=True,
+        )
+        if not available:
+            return
+        checkout.voucher = available[0].name
+        frappe.db.set_value("Captive Portal Code", checkout.voucher, {
+            "status": "Reserved", "portal_checkout": checkout.name,
+        })
+    voucher = _lock_voucher(checkout.voucher)
+    if (
+        voucher.zone != checkout.zone
+        or voucher.package != checkout.package
+        or voucher.duration_minutes != checkout.duration_minutes
+        or voucher.portal_checkout != checkout.name
+        or voucher.status not in ("Reserved", "Issued")
+    ):
+        frappe.throw("The allocated access is unavailable. Contact support; do not pay again.")
+    if voucher.status == "Reserved":
+        frappe.db.set_value("Captive Portal Code", voucher.name, "status", "Issued")
+
+
+def _refresh(checkout, candidate_id=None, force=False):
+    if checkout.status == "SUCCESS":
+        if not checkout.voucher:
+            _prepare_paid_access(checkout)
+            checkout.save(ignore_permissions=True)
+        return checkout
+    if checkout.status != "PENDING" and not force:
         return checkout
     provider_id = checkout.provider_payment_id or candidate_id
     if not provider_id:
         return checkout
-    if checkout.last_checked_at and (
+    if not force and checkout.last_checked_at and (
         now_datetime() - get_datetime(checkout.last_checked_at)
     ).total_seconds() < 5:
         return checkout
@@ -224,12 +260,9 @@ def _refresh(checkout, candidate_id=None):
     if checkout.status == "SUCCESS":
         checkout.mpesa_receipt = result["receipt"]
         checkout.confirmed_at = now_datetime()
-        voucher = _lock_voucher(checkout.voucher)
-        if voucher.zone != checkout.zone or voucher.portal_checkout != checkout.name or voucher.status != "Reserved":
-            frappe.throw("The reserved voucher is unavailable. Contact support; do not pay again.")
-        frappe.db.set_value("Captive Portal Code", voucher.name, "status", "Issued")
+        _prepare_paid_access(checkout)
         _record_payment(checkout, result["resource"])
-    elif checkout.status in ("FAILED", "CANCELLED"):
+    elif checkout.status in ("FAILED", "CANCELLED") and checkout.voucher:
         voucher = _lock_voucher(checkout.voucher)
         if voucher.zone != checkout.zone or voucher.portal_checkout != checkout.name or voucher.status != "Reserved":
             frappe.throw("The reserved voucher has changed. Contact support.")
@@ -273,6 +306,12 @@ def _record_payment(checkout, resource):
 def _access_response(checkout):
     response = {"status": checkout.status, "access_ready": False}
     if checkout.status != "SUCCESS":
+        return response
+    if not checkout.voucher:
+        response["customer_message"] = (
+            "Your payment is confirmed. Access is not ready yet. "
+            "Please contact support if this continues; do not pay again."
+        )
         return response
     voucher = _lock_voucher(checkout.voucher)
     if voucher.zone != checkout.zone or voucher.portal_checkout != checkout.name or voucher.status != "Issued":
@@ -321,7 +360,7 @@ def payment_callback(checkout_id, data=None, **kwargs):
         # fetching the provider resource and matching our checkout metadata.
         data = frappe.parse_json(data) if isinstance(data, str) else data
         candidate_id = payment_id((data or {}).get("id"))
-    _refresh(checkout, candidate_id)
+    _refresh(checkout, candidate_id, force=True)
     return {"received": True}
 
 
@@ -357,7 +396,7 @@ def reconcile_checkout(checkout_id, provider_payment_id=None):
     candidate = payment_id(provider_payment_id) if provider_payment_id else None
     if checkout.provider_payment_id and candidate and candidate != checkout.provider_payment_id:
         frappe.throw("This checkout already has a different Kopo Kopo payment ID.")
-    return _access_response(_refresh(checkout, candidate))
+    return _access_response(_refresh(checkout, candidate, force=True))
 
 
 def reconcile_pending_payments():
