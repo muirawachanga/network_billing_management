@@ -396,6 +396,8 @@ def reconcile_checkout(checkout_id, provider_payment_id=None):
     candidate = payment_id(provider_payment_id) if provider_payment_id else None
     if checkout.provider_payment_id and candidate and candidate != checkout.provider_payment_id:
         frappe.throw("This checkout already has a different Kopo Kopo payment ID.")
+    if checkout.status != "SUCCESS" and not checkout.provider_payment_id and not candidate:
+        frappe.throw("Enter the Kopo Kopo incoming payment request ID to reconcile this checkout.")
     return _access_response(_refresh(checkout, candidate, force=True))
 
 
