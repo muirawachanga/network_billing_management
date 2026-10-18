@@ -21,6 +21,17 @@ M-Pesa, and reconnecting after payment.
 The layout adapts to desktop and mobile screens and includes keyboard-friendly
 tabs, labelled inputs, and status messages.
 
+## Payment checks in Desk
+
+On the **Portal Checkout** list, System Managers and Network Administrators can
+select **Reconcile Date Range** and choose up to 31 days of checkout creation
+dates, including both endpoints. Keep the page open while records are checked.
+The summary identifies confirmed payments, remaining failures, missing provider
+IDs, and records needing attention. Completed batches remain saved if the run is
+interrupted; it is safe to run the range again. This action does not need the
+scheduler and does not send new payment prompts. The individual checkout's
+**Reconcile Payment** button remains available for targeted checks.
+
 ## Portal file
 
 The uploadable page is `pfsense/portal.html`. It contains its own styling and

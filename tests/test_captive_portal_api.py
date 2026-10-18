@@ -235,6 +235,52 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.assertEqual(self.checkout.status, "FAILED")
         self.frappe.db.set_value.assert_not_called()
 
+    def test_date_range_reconciles_failed_and_pending_with_inclusive_end_date(self):
+        self.frappe.get_all.return_value = [Document(name="checkout-1")]
+        self.checkout.status = "FAILED"
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        self.api._refresh = MagicMock(return_value=Document(status="SUCCESS", voucher="voucher-1"))
+        result = self.api.reconcile_date_range("2026-10-01", "2026-10-18")
+        self.assertEqual(result["results"], [{"name": "checkout-1", "outcome": "confirmed"}])
+        self.api._refresh.assert_called_once_with(self.checkout, force=True)
+        query = self.frappe.get_all.call_args.kwargs
+        self.assertIn(["creation", ">=", "2026-10-01"], query["filters"])
+        self.assertIn(["creation", "<", "2026-10-19"], query["filters"])
+        self.frappe.only_for.assert_called_once_with(("System Manager", "Network Administrator"))
+
+    def test_date_range_batches_and_skips_missing_provider_id_without_stopping(self):
+        self.frappe.get_all.return_value = [Document(name="checkout-" + str(n)) for n in range(3)]
+        self.api._lock_checkout = MagicMock(return_value=Document(status="FAILED"))
+        result = self.api.reconcile_date_range("2026-10-18", "2026-10-18", after_name="checkout-previous")
+        self.assertEqual(len(result["results"]), 2)
+        self.assertEqual(result["next_after"], "checkout-1")
+        self.assertTrue(all(row["outcome"] == "missing_provider_id" for row in result["results"]))
+        self.assertIn(
+            ["name", ">", "checkout-previous"],
+            self.frappe.get_all.call_args.kwargs["filters"],
+        )
+        self.connector_class.assert_not_called()
+
+    def test_date_range_continues_after_one_provider_error(self):
+        self.frappe.get_all.return_value = [Document(name="one"), Document(name="two")]
+        self.api._lock_checkout = MagicMock(side_effect=[
+            requests.Timeout(), Document(status="SUCCESS", voucher="voucher-1"),
+        ])
+        result = self.api.reconcile_date_range("2026-10-18", "2026-10-18")
+        self.assertEqual([row["outcome"] for row in result["results"]], ["error", "already_confirmed"])
+        self.frappe.db.rollback.assert_called_once()
+        self.frappe.log_error.assert_called_once()
+        self.frappe.db.commit.assert_called_once()
+
+    def test_date_range_rejects_invalid_reversed_and_oversized_ranges(self):
+        for start, end in (
+            ("bad", "2026-10-18"), ("2026-10-18", "2026-10-01"),
+            ("2026-01-01", "2026-12-31"),
+        ):
+            with self.subTest(start=start, end=end), self.assertRaises(ValueError):
+                self.api.reconcile_date_range(start, end)
+        self.frappe.get_all.assert_not_called()
+
     def test_mismatched_reservation_is_not_released(self):
         self.voucher.portal_checkout = "other-checkout"
         with patch.object(self.api, "confirmed_payment", return_value={"status": "FAILED"}):

@@ -64,3 +64,44 @@ test("button is not added for new records or unauthorized roles", () => {
   assert.equal(form({ authorized: false }).hasButton(), false);
   assert.equal(form({ fresh: true }).hasButton(), false);
 });
+
+test("list reconciliation submits date range and follows batch cursor without scheduler", async () => {
+  let settings;
+  let action;
+  let submit;
+  let refreshed = false;
+  let summary;
+  const requests = [];
+  const source = fs.readFileSync(path.join(__dirname,
+    "../network_billing_system/network_billing_system/doctype/portal_checkout/portal_checkout_list.js"), "utf8");
+  const frappe = {
+    listview_settings: {},
+    user: { has_role: () => true },
+    datetime: { get_today: () => "2026-10-18" },
+    utils: { escape_html: value => value },
+    prompt: (fields, callback) => { submit = callback; },
+    call: async options => {
+      requests.push(options);
+      return { message: {
+        results: [{ name: "checkout-" + requests.length, outcome: "confirmed" }],
+        next_after: requests.length === 1 ? "checkout-1" : null
+      } };
+    },
+    msgprint: value => { summary = value; },
+    throw: value => { throw new Error(value); }
+  };
+  vm.runInNewContext(source, { frappe, __: text => text });
+  settings = frappe.listview_settings["Portal Checkout"];
+  settings.onload({
+    page: { add_inner_button: (label, callback) => { action = callback; } },
+    refresh: () => { refreshed = true; }
+  });
+  action();
+  await submit({ from_date: "2026-10-01", to_date: "2026-10-18" });
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].args.from_date, "2026-10-01");
+  assert.equal(requests[1].args.after_name, "checkout-1");
+  assert.equal(requests[0].method, "network_billing_system.api.captive_portal.reconcile_date_range");
+  assert.equal(refreshed, true);
+  assert.equal(summary.indicator, "green");
+});

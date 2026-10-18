@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import re
+from datetime import date, timedelta
 from urllib.parse import urlencode
 
 import frappe
@@ -399,6 +400,56 @@ def reconcile_checkout(checkout_id, provider_payment_id=None):
     if checkout.status != "SUCCESS" and not checkout.provider_payment_id and not candidate:
         frappe.throw("Enter the Kopo Kopo incoming payment request ID to reconcile this checkout.")
     return _access_response(_refresh(checkout, candidate, force=True))
+
+
+@frappe.whitelist(methods=["POST"])
+def reconcile_date_range(from_date, to_date, after_name=None):
+    frappe.only_for(("System Manager", "Network Administrator"))
+    _enabled()
+    try:
+        start = date.fromisoformat(str(from_date))
+        end = date.fromisoformat(str(to_date))
+    except ValueError:
+        frappe.throw("Select valid From and To dates.")
+    if end < start or (end - start).days > 30:
+        frappe.throw("Select a date range of up to 31 days, with From before To.")
+    filters = [
+        ["creation", ">=", start.isoformat()],
+        ["creation", "<", (end + timedelta(days=1)).isoformat()],
+    ]
+    if after_name:
+        filters.append(["name", ">", after_name])
+    rows = frappe.get_all(
+        "Portal Checkout", filters=filters, fields=["name"],
+        order_by="name asc", limit_page_length=3,
+    )
+    results = []
+    for row in rows[:2]:
+        try:
+            checkout = _lock_checkout(row.name)
+            if checkout.status == "SUCCESS" and checkout.voucher:
+                outcome = "already_confirmed"
+            elif not checkout.provider_payment_id and checkout.status != "SUCCESS":
+                outcome = "missing_provider_id"
+            else:
+                checkout = _refresh(checkout, force=True)
+                outcome = (
+                    "confirmed" if checkout.status == "SUCCESS" and checkout.voucher
+                    else "awaiting_access" if checkout.status == "SUCCESS"
+                    else checkout.status.lower()
+                )
+            frappe.db.commit()
+            results.append({"name": row.name, "outcome": outcome})
+        except (requests.RequestException, ValueError, KeyError, frappe.ValidationError):
+            frappe.db.rollback()
+            frappe.log_error(
+                frappe.get_traceback(), "Date range reconciliation: " + row.name
+            )
+            results.append({"name": row.name, "outcome": "error"})
+    return {
+        "results": results,
+        "next_after": rows[1].name if len(rows) > 2 else None,
+    }
 
 
 def reconcile_pending_payments():
