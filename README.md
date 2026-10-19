@@ -38,6 +38,8 @@ customer names, phone numbers, and email redacted. Confirmed payments must
 match the checkout, amount, currency, payer, till, and configured receipt
 format. If verification raises an error, the checkout retains its previous
 status; the reconciliation dialog shows the corresponding Error Log ID.
+Receipt codes may contain only letters; a digit is not required. The same
+rule applies to provider verification and receipt-based reconnection.
 
 ## Portal file
 

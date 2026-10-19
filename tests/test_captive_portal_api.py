@@ -322,6 +322,50 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.connector_class.assert_not_called()
         self.frappe.db.set_value.assert_not_called()
 
+    def test_manual_reconciliation_confirms_all_letter_receipt(self):
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        self.api._record_payment = MagicMock()
+        self.frappe.db.set_value.side_effect = (
+            lambda doctype, name, field, value: self.voucher.update({field: value})
+        )
+        self.connector_class.return_value.get_portal_payment.return_value = {
+            "data": {
+                "id": self.checkout.provider_payment_id,
+                "attributes": {
+                    "status": "Success",
+                    "metadata": {"portal_checkout": self.checkout.name},
+                    "event": {"resource": {
+                        "reference": "ABCDEFGHIJ",
+                        "sender_phone_number": self.checkout.mobile_number,
+                        "amount": str(self.checkout.amount),
+                        "currency": "KES",
+                        "till_number": "K" + self.checkout.till_number,
+                    }},
+                },
+            },
+        }
+        result = self.api.reconcile_checkout(self.checkout.name)
+        self.assertNotIn("error", result)
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertTrue(result["access_ready"])
+        self.assertEqual(self.checkout.mpesa_receipt, "ABCDEFGHIJ")
+        self.api._record_payment.assert_called_once()
+        self.frappe.log_error.assert_called_once()
+
+    def test_receipt_recovery_accepts_all_letter_receipt(self):
+        self.frappe.db.get_value.return_value = "checkout-1"
+        self.checkout.status = "SUCCESS"
+        self.voucher.status = "Issued"
+        result = self.api.connect_existing_customer(
+            "mpesa_receipt", " abcdefghij ", zone_id="default"
+        )
+        self.assertTrue(result["access_ready"])
+        self.frappe.db.get_value.assert_called_once_with(
+            "Portal Checkout",
+            {"mpesa_receipt": "ABCDEFGHIJ", "status": "SUCCESS", "zone": "default"},
+            "name",
+        )
+
     def test_manual_reconciliation_logs_and_returns_sanitized_provider_payload_on_validation_error(self):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)
         self.connector_class.return_value.get_portal_payment.return_value = {

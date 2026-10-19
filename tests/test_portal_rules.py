@@ -71,6 +71,12 @@ class TestPortalRules(unittest.TestCase):
         self.assertEqual(result["status"], "SUCCESS")
         self.assertEqual(result["receipt"], "QWE123ABC")
 
+    def test_verified_payment_accepts_all_letter_receipt(self):
+        self.payload["data"]["attributes"]["event"]["resource"]["reference"] = "ABCDEFGHIJ"
+        result = confirmed_payment(self.payload, self.checkout, PAYMENT_ID)
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertEqual(result["receipt"], "ABCDEFGHIJ")
+
     def test_rejects_wrong_checkout_and_provider_id(self):
         payload = copy.deepcopy(self.payload)
         payload["data"]["attributes"]["metadata"]["portal_checkout"] = "other-checkout"

@@ -72,6 +72,17 @@ const catalogue = [
   { package_id: "sold_out", label: "2 Hours", price: 10, currency: "KES", available: false },
 ];
 
+test("all-letter M-Pesa receipt reaches receipt recovery API", async () => {
+  const page = portal(catalogue);
+  await page.ready();
+  page.element("lookupValue").value = " abcdefghij ";
+  page.respond({ status: "NOT_FOUND" });
+  await page.run("lookupExistingPayment()");
+  assert.equal(page.calls.length, 2);
+  assert.equal(page.calls[1].payload.lookup_value, "ABCDEFGHIJ");
+  assert.equal(page.calls[1].payload.lookup_type, "mpesa_receipt");
+});
+
 test("loads server packages and prices; preserves unavailable state after payment errors", async () => {
   const page = portal(catalogue);
   assert.equal(page.element("payButton").disabled, true);
