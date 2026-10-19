@@ -32,6 +32,13 @@ interrupted; it is safe to run the range again. This action does not need the
 scheduler and does not send new payment prompts. The individual checkout's
 **Reconcile Payment** button remains available for targeted checks.
 
+Manual reconciliation records the Kopo Kopo response or request error in
+Frappe Error Log. The checkout form also displays the response payload, with
+customer names, phone numbers, and email redacted. Confirmed payments must
+match the checkout, amount, currency, payer, till, and configured receipt
+format. If verification raises an error, the checkout retains its previous
+status; the reconciliation dialog shows the corresponding Error Log ID.
+
 ## Portal file
 
 The uploadable page is `pfsense/portal.html`. It contains its own styling and

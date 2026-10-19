@@ -4,7 +4,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 
-function form({ authorized = true, fresh = false, provider = "provider-id" } = {}) {
+function form({ authorized = true, fresh = false, provider = "provider-id", callMessage } = {}) {
   let handlers;
   let button;
   let prompt;
@@ -22,7 +22,15 @@ function form({ authorized = true, fresh = false, provider = "provider-id" } = {
     frappe: {
       ui: { form: { on: (name, events) => { handlers = events; } } },
       user: { has_role: () => authorized },
-      call: async args => { request = args; return { message: { status: "SUCCESS", access_ready: true } }; },
+      call: async args => {
+        request = args;
+        return { message: callMessage || {
+          status: "SUCCESS",
+          access_ready: true,
+          provider_payload: { data: { attributes: { status: "Success" } } }
+        } };
+      },
+      utils: { escape_html: text => text },
       prompt: (fields, action) => { prompt = action; },
       msgprint: value => { message = value; },
       throw: text => { throw new Error(text); },
@@ -50,6 +58,8 @@ test("authorized administrator can reconcile and reload without scheduler", asyn
   assert.equal(page.request().freeze, true);
   assert.equal(page.reloaded(), true);
   assert.equal(page.message().indicator, "green");
+  assert.match(page.message().message, /Kopo Kopo response/);
+  assert.match(page.message().message, /"status": "Success"/);
 });
 
 test("missing provider ID prompts before making a request", async () => {
@@ -58,6 +68,18 @@ test("missing provider ID prompts before making a request", async () => {
   assert.equal(page.request(), undefined);
   await page.prompted()({ provider_payment_id: "existing-payment-id" });
   assert.equal(page.request().args.provider_payment_id, "existing-payment-id");
+});
+
+test("reconciliation error and provider payload are displayed to the administrator", async () => {
+  const page = form({ callMessage: {
+    status: "PENDING",
+    error: "The provider returned an invalid M-Pesa receipt.",
+    provider_payload: { data: { attributes: { status: "Success" } } }
+  } });
+  await page.click();
+  assert.equal(page.message().indicator, "red");
+  assert.match(page.message().message, /invalid M-Pesa receipt/);
+  assert.match(page.message().message, /"status": "Success"/);
 });
 
 test("button is not added for new records or unauthorized roles", () => {

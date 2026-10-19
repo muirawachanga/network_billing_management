@@ -19,14 +19,23 @@ frappe.ui.form.on('Portal Checkout', {
 				if (!result || !result.status) {
 					frappe.throw(__('The payment check returned no status. Please contact support.'));
 				}
+				const diagnostic = result.provider_payload
+					? `<h4>${__('Kopo Kopo response (sensitive fields redacted)')}</h4><pre>${frappe.utils.escape_html(JSON.stringify(result.provider_payload, null, 2))}</pre>`
+					: `<p>${__('No provider payload was received. Check Error Log for the request result.')}</p>`;
+				const error = result.error
+					? `<p><strong>${__('Reconciliation error')}:</strong> ${frappe.utils.escape_html(result.error)}</p>`
+					: '';
+				const logReference = result.error_log
+					? `<p>${__('Frappe Error Log')}: <strong>${frappe.utils.escape_html(result.error_log)}</strong></p>`
+					: '';
 				frappe.msgprint({
 					title: __('Payment Reconciliation'),
-					message: result.access_ready
+					message: `${error}${logReference}<p>${result.access_ready
 						? __('Payment confirmed and access is ready.')
 						: result.status === 'SUCCESS'
 							? __('Payment confirmed, but access is not ready. Check voucher inventory or contact support. Do not request another payment.')
-							: __('Current payment status: {0}', [result.status]),
-					indicator: result.access_ready ? 'green' : 'orange'
+							: __('Current payment status: {0}', [result.status])}</p>${diagnostic}`,
+					indicator: result.error ? 'red' : result.access_ready ? 'green' : 'orange'
 				});
 			};
 			if (!frm.doc.provider_payment_id && frm.doc.status !== 'SUCCESS') {

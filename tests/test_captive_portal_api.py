@@ -322,6 +322,78 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.connector_class.assert_not_called()
         self.frappe.db.set_value.assert_not_called()
 
+    def test_manual_reconciliation_logs_and_returns_sanitized_provider_payload_on_validation_error(self):
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        self.connector_class.return_value.get_portal_payment.return_value = {
+            "data": {
+                "id": self.checkout.provider_payment_id,
+                "attributes": {
+                    "status": "Success",
+                    "metadata": {"portal_checkout": "checkout-1"},
+                    "event": {"resource": {
+                        "reference": "123",
+                        "sender_phone_number": "+254712345678",
+                        "sender_first_name": "Test",
+                        "amount": "5",
+                        "currency": "KES",
+                        "till_number": "K123456",
+                    }},
+                },
+            },
+        }
+
+        result = self.api.reconcile_checkout("checkout-1")
+
+        self.assertEqual(result["status"], "PENDING")
+        self.assertIn("invalid M-Pesa receipt", result["error"])
+        resource = result["provider_payload"]["data"]["attributes"]["event"]["resource"]
+        self.assertEqual(resource["reference"], "123")
+        self.assertEqual(resource["sender_phone_number"], "<redacted>")
+        self.frappe.log_error.assert_called_once()
+        log_message = self.frappe.log_error.call_args.args[0]
+        self.assertIn('"reference": "123"', log_message)
+        self.assertNotIn("+254712345678", log_message)
+
+    def test_manual_reconciliation_logs_and_returns_pending_provider_payload(self):
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        payload = {
+            "data": {
+                "id": self.checkout.provider_payment_id,
+                "attributes": {
+                    "status": "Pending",
+                    "metadata": {"portal_checkout": "checkout-1"},
+                },
+            },
+        }
+        self.connector_class.return_value.get_portal_payment.return_value = payload
+
+        result = self.api.reconcile_checkout("checkout-1")
+
+        self.assertEqual(result["status"], "PENDING")
+        self.assertEqual(result["provider_payload"], payload)
+        self.frappe.log_error.assert_called_once()
+
+    def test_manual_reconciliation_requeries_successful_checkout_without_downgrading_it(self):
+        self.checkout.status = "SUCCESS"
+        self.checkout.voucher = None
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        payload = {
+            "data": {
+                "id": self.checkout.provider_payment_id,
+                "attributes": {
+                    "status": "Pending",
+                    "metadata": {"portal_checkout": "checkout-1"},
+                },
+            },
+        }
+        self.connector_class.return_value.get_portal_payment.return_value = payload
+
+        result = self.api.reconcile_checkout("checkout-1")
+
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertEqual(result["provider_payload"], payload)
+        self.frappe.log_error.assert_called_once()
+
     def test_callback_fetches_provider_instead_of_trusting_success_payload(self):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)
         self.api._refresh = MagicMock()

@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import json
 import re
 from datetime import date, timedelta
 from urllib.parse import urlencode
@@ -236,8 +237,35 @@ def _prepare_paid_access(checkout):
         frappe.db.set_value("Captive Portal Code", voucher.name, "status", "Issued")
 
 
-def _refresh(checkout, candidate_id=None, force=False):
-    if checkout.status == "SUCCESS":
+def _diagnostic_payload(value, key=""):
+    sensitive = ("phone", "email", "first_name", "middle_name", "last_name",
+                 "customer_id", "subscriber", "notes")
+    if any(part in key.lower() for part in sensitive):
+        return "<redacted>"
+    if isinstance(value, dict):
+        return {str(k): _diagnostic_payload(v, str(k)) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_diagnostic_payload(item) for item in value]
+    return value
+
+
+def _log_reconciliation(checkout, diagnostics, error=None):
+    record = {
+        "checkout_id": checkout.name,
+        "checkout_status": checkout.status,
+        "provider_payment_id": diagnostics.get(
+            "provider_payment_id", checkout.provider_payment_id
+        ),
+        "provider_payload": diagnostics.get("payload"),
+        "error": error,
+    }
+    title = "Portal reconciliation: {}".format(checkout.name)
+    return frappe.log_error(json.dumps(record, indent=2, sort_keys=True), title)
+
+
+def _refresh(checkout, candidate_id=None, force=False, diagnostics=None):
+    was_successful = checkout.status == "SUCCESS"
+    if was_successful and (not force or diagnostics is None):
         if not checkout.voucher:
             _prepare_paid_access(checkout)
             checkout.save(ignore_permissions=True)
@@ -246,15 +274,31 @@ def _refresh(checkout, candidate_id=None, force=False):
         return checkout
     provider_id = checkout.provider_payment_id or candidate_id
     if not provider_id:
+        if was_successful and not checkout.voucher:
+            _prepare_paid_access(checkout)
+            checkout.save(ignore_permissions=True)
         return checkout
     if not force and checkout.last_checked_at and (
         now_datetime() - get_datetime(checkout.last_checked_at)
     ).total_seconds() < 5:
         return checkout
 
+    if diagnostics is not None:
+        diagnostics["provider_payment_id"] = provider_id
     connector = KopokopoConnector(env=checkout.provider_environment)
     payload = connector.get_portal_payment(provider_id)
-    result = confirmed_payment(payload, checkout.as_dict(), provider_id)
+    if diagnostics is not None:
+        diagnostics["payload"] = _diagnostic_payload(payload)
+    try:
+        result = confirmed_payment(payload, checkout.as_dict(), provider_id)
+    except ValueError as exc:
+        if diagnostics is not None:
+            diagnostics["error"] = str(exc)
+        raise
+    if was_successful and result["status"] != "SUCCESS":
+        checkout.last_checked_at = now_datetime()
+        checkout.save(ignore_permissions=True)
+        return checkout
     checkout.provider_payment_id = provider_id
     checkout.last_checked_at = now_datetime()
     checkout.status = result["status"]
@@ -399,7 +443,23 @@ def reconcile_checkout(checkout_id, provider_payment_id=None):
         frappe.throw("This checkout already has a different Kopo Kopo payment ID.")
     if checkout.status != "SUCCESS" and not checkout.provider_payment_id and not candidate:
         frappe.throw("Enter the Kopo Kopo incoming payment request ID to reconcile this checkout.")
-    return _access_response(_refresh(checkout, candidate, force=True))
+    diagnostics = {}
+    try:
+        checkout = _refresh(checkout, candidate, force=True, diagnostics=diagnostics)
+    except (ValueError, requests.RequestException) as exc:
+        error_log = _log_reconciliation(checkout, diagnostics, str(exc))
+        response = _access_response(checkout)
+        response.update({
+            "error": str(exc),
+            "provider_payload": diagnostics.get("payload"),
+            "error_log": error_log,
+        })
+        return response
+    error_log = _log_reconciliation(checkout, diagnostics)
+    response = _access_response(checkout)
+    response["provider_payload"] = diagnostics.get("payload")
+    response["error_log"] = error_log
+    return response
 
 
 @frappe.whitelist(methods=["POST"])
