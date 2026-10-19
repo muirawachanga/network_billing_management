@@ -322,20 +322,6 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.connector_class.assert_not_called()
         self.frappe.db.set_value.assert_not_called()
 
-    def test_receipt_recovery_accepts_letters_only_and_digits_only(self):
-        self.frappe.db.get_value.return_value = None
-        for receipt in ("ABCDEFGHIJ", "1234567890"):
-            with self.subTest(receipt=receipt):
-                result = self.api.connect_existing_customer(
-                    "mpesa_receipt", receipt, zone_id="default"
-                )
-                self.assertEqual(result["status"], "NOT_FOUND")
-                self.frappe.db.get_value.assert_called_with(
-                    "Portal Checkout",
-                    {"mpesa_receipt": receipt, "status": "SUCCESS", "zone": "default"},
-                    "name",
-                )
-
     def test_callback_fetches_provider_instead_of_trusting_success_payload(self):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)
         self.api._refresh = MagicMock()

@@ -32,12 +32,6 @@ interrupted; it is safe to run the range again. This action does not need the
 scheduler and does not send new payment prompts. The individual checkout's
 **Reconcile Payment** button remains available for targeted checks.
 
-Reconciliation fetches the payment from Kopo Kopo using the stored provider ID.
-Confirmed payments must match the checkout, amount, currency, payer and till.
-The receipt is read from `data.attributes.event.resource.reference`; receipt
-codes accept 8–20 letters or digits without requiring a mixture of both.
-If verification raises an error, the checkout retains its previous status.
-
 ## Portal file
 
 The uploadable page is `pfsense/portal.html`. It contains its own styling and

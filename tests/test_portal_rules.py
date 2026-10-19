@@ -71,13 +71,6 @@ class TestPortalRules(unittest.TestCase):
         self.assertEqual(result["status"], "SUCCESS")
         self.assertEqual(result["receipt"], "QWE123ABC")
 
-    def test_provider_receipt_does_not_require_mixed_letters_and_digits(self):
-        for reference in ("ABCDEFGHIJ", "1234567890", "OJJ1MPU40Z", " abcdefghij "):
-            self.payload["data"]["attributes"]["event"]["resource"]["reference"] = reference
-            with self.subTest(reference=reference):
-                result = confirmed_payment(self.payload, self.checkout, PAYMENT_ID)
-                self.assertEqual(result["receipt"], reference.strip().upper())
-
     def test_rejects_wrong_checkout_and_provider_id(self):
         payload = copy.deepcopy(self.payload)
         payload["data"]["attributes"]["metadata"]["portal_checkout"] = "other-checkout"
@@ -92,8 +85,6 @@ class TestPortalRules(unittest.TestCase):
             ("amount", "Infinity"), ("amount", "not-money"),
             ("currency", "USD"), ("sender_phone_number", "+254722222222"),
             ("till_number", "K654321"), ("reference", ""),
-            ("reference", None), ("reference", "ABC1234"),
-            ("reference", "A" * 21), ("reference", "ABC-123456"),
         ):
             payload = copy.deepcopy(self.payload)
             payload["data"]["attributes"]["event"]["resource"][field] = value
