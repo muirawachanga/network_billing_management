@@ -373,7 +373,7 @@ def connect_existing_customer(lookup_type, lookup_value, zone_id=None):
     if lookup_type != "mpesa_receipt":
         frappe.throw("Only M-Pesa receipt recovery is supported.")
     receipt = re.sub(r"\s+", "", str(lookup_value or "")).upper()
-    if not re.fullmatch(r"(?=.*[A-Z])(?=.*\d)[A-Z0-9]{8,20}", receipt):
+    if not re.fullmatch(r"[A-Z0-9]{8,20}", receipt):
         frappe.throw("Enter a valid M-Pesa receipt code.")
     name = frappe.db.get_value("Portal Checkout", {
         "mpesa_receipt": receipt, "status": "SUCCESS", "zone": zone_id,

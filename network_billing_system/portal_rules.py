@@ -73,6 +73,6 @@ def confirmed_payment(payload, checkout, expected_payment_id):
     if str(resource.get("till_number") or "").lstrip("K") != checkout["till_number"]:
         raise ValueError("The confirmed payment was received by a different till.")
     receipt = str(resource.get("reference") or "").strip().upper()
-    if not re.fullmatch(r"(?=.*[A-Z])(?=.*\d)[A-Z0-9]{8,20}", receipt):
+    if not re.fullmatch(r"[A-Z0-9]{8,20}", receipt):
         raise ValueError("The provider returned an invalid M-Pesa receipt.")
     return {"status": "SUCCESS", "receipt": receipt, "resource": resource}

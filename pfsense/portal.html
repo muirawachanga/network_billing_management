@@ -727,8 +727,8 @@
         return;
       }
       const lookupValue = rawValue.toUpperCase().replace(/\s+/g, "");
-      if (!/^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{8,20}$/.test(lookupValue)) {
-        setNotice("lookupNotice", "Enter the 8–20 character M-Pesa receipt code containing letters and numbers, not a phone number or PIN.", "error");
+      if (!/^[A-Z0-9]{8,20}$/.test(lookupValue)) {
+        setNotice("lookupNotice", "Enter the 8–20 character M-Pesa receipt code from your confirmation SMS, not a phone number or PIN.", "error");
         $("lookupValue").focus();
         return;
       }
