@@ -451,15 +451,10 @@ def reconcile_checkout(checkout_id, provider_payment_id=None):
         response = _access_response(checkout)
         response.update({
             "error": str(exc),
-            "provider_payload": diagnostics.get("payload"),
             "error_log": error_log,
         })
         return response
-    error_log = _log_reconciliation(checkout, diagnostics)
-    response = _access_response(checkout)
-    response["provider_payload"] = diagnostics.get("payload")
-    response["error_log"] = error_log
-    return response
+    return _access_response(checkout)
 
 
 @frappe.whitelist(methods=["POST"])

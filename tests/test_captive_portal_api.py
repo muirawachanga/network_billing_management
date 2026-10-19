@@ -350,7 +350,8 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.assertTrue(result["access_ready"])
         self.assertEqual(self.checkout.mpesa_receipt, "ABCDEFGHIJ")
         self.api._record_payment.assert_called_once()
-        self.frappe.log_error.assert_called_once()
+        self.frappe.log_error.assert_not_called()
+        self.assertNotIn("provider_payload", result)
 
     def test_receipt_recovery_accepts_all_letter_receipt(self):
         self.frappe.db.get_value.return_value = "checkout-1"
@@ -366,7 +367,7 @@ class TestCaptivePortalAPI(unittest.TestCase):
             "name",
         )
 
-    def test_manual_reconciliation_logs_and_returns_sanitized_provider_payload_on_validation_error(self):
+    def test_manual_reconciliation_logs_payload_on_error_without_returning_it(self):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)
         self.connector_class.return_value.get_portal_payment.return_value = {
             "data": {
@@ -390,15 +391,14 @@ class TestCaptivePortalAPI(unittest.TestCase):
 
         self.assertEqual(result["status"], "PENDING")
         self.assertIn("invalid M-Pesa receipt", result["error"])
-        resource = result["provider_payload"]["data"]["attributes"]["event"]["resource"]
-        self.assertEqual(resource["reference"], "123")
-        self.assertEqual(resource["sender_phone_number"], "<redacted>")
+        self.assertNotIn("provider_payload", result)
+        self.assertIn("error_log", result)
         self.frappe.log_error.assert_called_once()
         log_message = self.frappe.log_error.call_args.args[0]
         self.assertIn('"reference": "123"', log_message)
         self.assertNotIn("+254712345678", log_message)
 
-    def test_manual_reconciliation_logs_and_returns_pending_provider_payload(self):
+    def test_manual_reconciliation_does_not_log_or_return_pending_provider_payload(self):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)
         payload = {
             "data": {
@@ -414,8 +414,8 @@ class TestCaptivePortalAPI(unittest.TestCase):
         result = self.api.reconcile_checkout("checkout-1")
 
         self.assertEqual(result["status"], "PENDING")
-        self.assertEqual(result["provider_payload"], payload)
-        self.frappe.log_error.assert_called_once()
+        self.assertNotIn("provider_payload", result)
+        self.frappe.log_error.assert_not_called()
 
     def test_manual_reconciliation_requeries_successful_checkout_without_downgrading_it(self):
         self.checkout.status = "SUCCESS"
@@ -435,8 +435,8 @@ class TestCaptivePortalAPI(unittest.TestCase):
         result = self.api.reconcile_checkout("checkout-1")
 
         self.assertEqual(result["status"], "SUCCESS")
-        self.assertEqual(result["provider_payload"], payload)
-        self.frappe.log_error.assert_called_once()
+        self.assertNotIn("provider_payload", result)
+        self.frappe.log_error.assert_not_called()
 
     def test_callback_fetches_provider_instead_of_trusting_success_payload(self):
         self.api._lock_checkout = MagicMock(return_value=self.checkout)

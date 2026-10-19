@@ -58,8 +58,7 @@ test("authorized administrator can reconcile and reload without scheduler", asyn
   assert.equal(page.request().freeze, true);
   assert.equal(page.reloaded(), true);
   assert.equal(page.message().indicator, "green");
-  assert.match(page.message().message, /Kopo Kopo response/);
-  assert.match(page.message().message, /"status": "Success"/);
+  assert.doesNotMatch(page.message().message, /Kopo Kopo response|"status": "Success"/);
 });
 
 test("missing provider ID prompts before making a request", async () => {
@@ -70,16 +69,18 @@ test("missing provider ID prompts before making a request", async () => {
   assert.equal(page.request().args.provider_payment_id, "existing-payment-id");
 });
 
-test("reconciliation error and provider payload are displayed to the administrator", async () => {
+test("reconciliation shows the error and log reference without a provider payload", async () => {
   const page = form({ callMessage: {
     status: "PENDING",
     error: "The provider returned an invalid M-Pesa receipt.",
+    error_log: "error-log-1",
     provider_payload: { data: { attributes: { status: "Success" } } }
   } });
   await page.click();
   assert.equal(page.message().indicator, "red");
   assert.match(page.message().message, /invalid M-Pesa receipt/);
-  assert.match(page.message().message, /"status": "Success"/);
+  assert.match(page.message().message, /error-log-1/);
+  assert.doesNotMatch(page.message().message, /"status": "Success"/);
 });
 
 test("button is not added for new records or unauthorized roles", () => {
