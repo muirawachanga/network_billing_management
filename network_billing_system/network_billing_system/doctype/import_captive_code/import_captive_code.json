@@ -9,12 +9,21 @@
   "import_file",
   "column_break_2",
   "status",
+  "package",
+  "zone",
   "expiry_duration",
   "import_details_section",
   "import_log",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "zone",
+   "fieldtype": "Link",
+   "options": "Captive Portal Zone",
+   "label": "Zone",
+   "reqd": 1
+  },
   {
    "fieldname": "status",
    "fieldtype": "Select",
@@ -45,9 +54,19 @@
    "label": "Import Details"
   },
   {
+   "fieldname": "package",
+   "fieldtype": "Link",
+   "label": "Package",
+   "options": "Internet Package Profile",
+   "reqd": 1,
+   "description": "Import only pfSense vouchers generated with this package's duration."
+  },
+  {
    "fieldname": "expiry_duration",
    "fieldtype": "Select",
    "label": "Expiry Duration",
+   "hidden": 1,
+   "read_only": 1,
    "options": "Daily\nMonthly"
   },
   {
@@ -59,7 +78,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-11-14 22:55:05.470348",
+ "modified": "2026-10-17 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Import Captive Code",
