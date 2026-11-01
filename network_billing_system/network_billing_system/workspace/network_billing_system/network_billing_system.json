@@ -1,6 +1,6 @@
 {
- "charts": [],
- "content": "[{\"id\":\"iZPCdywiqN\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Network Billing System</span>\",\"col\":12}},{\"id\":\"c22kJjIXGS\",\"type\":\"card\",\"data\":{\"card_name\":\"SMS Communication\",\"col\":4}},{\"id\":\"X3PheDZer7\",\"type\":\"card\",\"data\":{\"card_name\":\"Captive Code\",\"col\":4}},{\"id\":\"KSOPFzk6My\",\"type\":\"card\",\"data\":{\"card_name\":\"MPESA\",\"col\":4}},{\"id\":\"sD4PGU05oU\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"TzbHBzwOl5\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"SMS Log\",\"col\":4}},{\"id\":\"DPNC_FKpFK\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Captive Codes\",\"col\":4}},{\"id\":\"MOgweZMbRC\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Import Captive Code\",\"col\":4}},{\"id\":\"SeE5sfUOvA\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Mpesa Log\",\"col\":4}}]",
+ "charts": [{"chart_name": "Zone Payment Overview", "label": "Zone Payment Overview"}],
+ "content": "[{\"id\":\"iZPCdywiqN\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Network Billing System</span>\",\"col\":12}},{\"id\":\"zoneFinanceChart\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Zone Payment Overview\",\"col\":12}},{\"id\":\"c22kJjIXGS\",\"type\":\"card\",\"data\":{\"card_name\":\"SMS Communication\",\"col\":4}},{\"id\":\"X3PheDZer7\",\"type\":\"card\",\"data\":{\"card_name\":\"Captive Code\",\"col\":4}},{\"id\":\"KSOPFzk6My\",\"type\":\"card\",\"data\":{\"card_name\":\"MPESA\",\"col\":4}},{\"id\":\"sD4PGU05oU\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"TzbHBzwOl5\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"SMS Log\",\"col\":4}},{\"id\":\"DPNC_FKpFK\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Captive Codes\",\"col\":4}},{\"id\":\"MOgweZMbRC\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Import Captive Code\",\"col\":4}},{\"id\":\"SeE5sfUOvA\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Mpesa Log\",\"col\":4}}]",
  "creation": "2023-11-14 23:20:26.570709",
  "custom_blocks": [],
  "docstatus": 0,
@@ -162,9 +162,25 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "MPESA",
-   "link_count": 3,
+   "link_count": 5,
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Zone Payment Dashboard",
+   "link_to": "Zone Payment Dashboard",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Zone Remittances",
+   "link_to": "Zone Remittance",
+   "link_type": "DocType",
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -197,7 +213,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-17 08:00:00.000000",
+ "modified": "2026-11-01 13:31:22.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Network Billing System",

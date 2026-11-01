@@ -3,6 +3,85 @@
 A mobile-friendly captive portal for choosing Wi-Fi packages, paying with
 M-Pesa, and reconnecting after payment.
 
+## Zone payment dashboard and remittances
+
+After `bench --site <site> migrate`, open **Network Billing System → MPESA →
+Zone Payment Dashboard**. The standard Frappe Script Report includes summary
+totals, a zone comparison chart, and per-zone successful-payment counts,
+collections, reserved withdrawals, withdrawn amounts, and available funds.
+The **Zone Payment Overview** native Frappe Dashboard Chart is embedded at the
+top of the workspace and is also available in the **Zone Finance** Dashboard.
+Live and sandbox balances are separate; live is the default. All successful
+historical package checkouts are included automatically. No checkout, voucher,
+SMS, or portal-login behavior has been changed.
+
+Balances assume 100% of a zone's successful KES collections belong to that
+zone, with no opening balance, commission, refund, or revenue split. This is
+an internal allocation ledger, **not Kopo Kopo's settled wallet balance**.
+Availability is collected minus submitted pending/uncertain remittances minus
+paid remittances, including each remittance's fee allowance. Failed transfers
+release the reservation only after verified provider failure. Drafts do not
+reserve funds. Use a conservative fee allowance agreed with the provider;
+it is deducted in full, not automatically replaced with actual provider fees.
+
+Configure the default mobile or bank recipient and Kopo Kopo source identifier
+on **Captive Portal Zone**. Selecting a zone on a new **Zone Remittance**
+copies those defaults; the submitted record preserves the recipient snapshot.
+Submission reserves funds under a per-zone database lock but does not send
+money. Only System Managers and Network Administrators can operate it.
+
+Transfers are **disabled by default**, and live sending is blocked in this
+first release pending sandbox verification of the provider status schema.
+Before enabling sandbox transfers with
+`enable_zone_remittance` as a boolean site setting, validate in sandbox with
+your Kopo Kopo account, confirm Pay permissions, source funds, charges, bank
+branch reference, and recipient. **Send Remittance** performs an explicit,
+confirmed single-recipient transfer. Mobile destinations currently support
+Safaricom M-Pesa; bank destinations require account name, number and provider
+bank branch reference. A public HTTPS site URL is required for callbacks.
+There is no automatic payout schedule or automatic retry.
+Use a separate test site with sandbox credentials; do not replace the
+credentials serving existing live checkout payments to test payouts.
+
+The integration follows Kopo Kopo's official Python SDK contract:
+`POST /api/v2/send_money` with `source_identifier`, `currency`, `destinations`,
+`metadata`, and `_links.callback_url`. Mobile destinations use `mobile_wallet`,
+`phone_number`, and `network`; bank destinations use `bank_account`,
+`account_name`, `account_number`, and `bank_branch_ref`.
+Status is queried with authenticated `GET /api/v2/send_money/<UUID>`;
+callbacks only trigger that lookup. The verifier requires matching ID,
+metadata, source, currency, single recipient, amount and terminal destination
+status. A differing or incomplete provider response remains **Unknown** with
+funds reserved and an Error Log; verify the account's sandbox response before
+production use. A request UUID or callback alone never means paid.
+
+If a transfer times out, do not create a replacement. Use **Check Transfer
+Status**, supplying its provider UUID if the initial response was lost.
+Sending, Pending, Unknown and Paid records cannot be cancelled. Queued records
+may be cancelled before sending. This deployment has not performed a real
+transfer; provider settlement and live/sandbox integration require operator
+validation.
+
+### Reconcile withdrawals made directly in Kopo Kopo
+
+Create a **Zone Remittance** with **Withdrawal Method = External Withdrawal**
+when the money was already withdrawn outside this app. Select its zone,
+environment, source and recipient; enter the actual amount and charges
+(using the fee allowance field), unique Kopo Kopo transaction reference,
+withdrawal date, and private statement/receipt attachment. Confirm that you
+verified completion against provider records, then submit.
+
+This records a **Paid** ledger entry without calling the payout API or sending
+money again. Duplicate external references are rejected; when the reference
+is a transfer UUID it also shares the unique provider-ID constraint with API
+remittances. Submitted external withdrawals cannot be cancelled or edited.
+They can expose a negative available balance if the real withdrawal exceeded
+the recorded zone entitlement; this intentionally reflects the financial
+shortfall instead of refusing to record an already-completed payment.
+Do not import an API remittance a second time as an external withdrawal:
+reconcile the original record instead. An external entry is administrator
+attestation with evidence, not automatic provider verification.
+
 ## Portal experience
 
 - **Package selection:** View available bundles and prices, with sold-out

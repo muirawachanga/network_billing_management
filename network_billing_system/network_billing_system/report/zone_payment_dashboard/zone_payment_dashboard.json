@@ -1,0 +1,12 @@
+{
+ "doctype": "Report",
+ "name": "Zone Payment Dashboard",
+ "report_name": "Zone Payment Dashboard",
+ "ref_doctype": "Portal Checkout",
+ "report_type": "Script Report",
+ "is_standard": "Yes",
+ "module": "Network Billing System",
+ "modified": "2026-11-01 13:31:22.000000",
+ "roles": [{"role": "System Manager"}, {"role": "Network Administrator"}],
+ "disabled": 0
+}

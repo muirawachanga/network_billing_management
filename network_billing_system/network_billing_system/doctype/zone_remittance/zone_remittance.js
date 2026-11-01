@@ -1,0 +1,55 @@
+frappe.ui.form.on('Zone Remittance', {
+	async zone(frm) {
+		if (!frm.doc.zone || frm.doc.docstatus !== 0) return;
+		const response = await frappe.db.get_doc('Captive Portal Zone', frm.doc.zone);
+		await frm.set_value({
+			recipient_name: response.remittance_recipient_name || '',
+			destination_type: response.remittance_destination_type || 'mobile_wallet',
+			phone_number: response.remittance_phone_number || '',
+			account_name: response.remittance_account_name || '',
+			account_number: response.remittance_account_number || '',
+			bank_branch_ref: response.remittance_bank_branch_ref || '',
+			source_identifier: response.remittance_source_identifier || ''
+		});
+	},
+	refresh(frm) {
+		if (frm.doc.docstatus === 0 && frm.doc.withdrawal_method === 'External Withdrawal') {
+			frm.set_intro(__('Record a completed withdrawal from Kopo Kopo with a unique reference and private evidence. Submission deducts funds without sending money and may reveal a negative zone balance.'), 'orange');
+		}
+		if (frm.doc.docstatus !== 1 || !frappe.user.has_role(['System Manager', 'Network Administrator'])) return;
+		if (frm.doc.withdrawal_method === 'External Withdrawal') return;
+		const call = async (method, args = {}) => {
+			const response = await frappe.call({
+				method: `network_billing_system.api.zone_remittance.${method}`,
+				args: {remittance_id: frm.doc.name, ...args},
+				freeze: true,
+				freeze_message: __('Checking remittance...')
+			});
+			await frm.reload_doc();
+			frappe.msgprint({
+				title: __('Zone Remittance'),
+				message: frappe.utils.escape_html(response.message.message || response.message.status),
+				indicator: response.message.error ? 'red' : 'blue'
+			});
+		};
+		if (frm.doc.status === 'Queued') {
+			if (frm.doc.provider_environment === 'live') {
+				frm.set_intro(__('Live transfers are not enabled in this release. Validate the payout response in sandbox first.'), 'orange');
+				return;
+			}
+			frm.add_custom_button(__('Send Remittance'), () => {
+				frappe.confirm(__('This submits a sandbox remittance request to Kopo Kopo for the recipient shown on this document. Continue?'),
+					() => call('send_remittance'));
+			});
+		} else if (['Sending', 'Pending', 'Unknown'].includes(frm.doc.status)) {
+			frm.add_custom_button(__('Check Transfer Status'), () => {
+				if (!frm.doc.provider_transfer_id) {
+					frappe.prompt([{fieldname: 'provider_transfer_id', fieldtype: 'Data', label: __('Kopo Kopo Transfer UUID'), reqd: 1}],
+						values => call('check_remittance', values));
+				} else {
+					return call('check_remittance');
+				}
+			});
+		}
+	}
+});
