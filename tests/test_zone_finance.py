@@ -37,6 +37,7 @@ class TestBalances(unittest.TestCase):
             create table `tabCaptive Portal Zone` (name text, display_name text);
             create table `tabPortal Checkout` (zone text, amount real, status text, currency text, provider_environment text);
             create table `tabZone Remittance` (zone text, amount real, fee_allowance real, status text, docstatus int, provider_environment text);
+            create table `tabZone Finance Entry` (zone text, environment text, debit real, reserved real);
             insert into `tabCaptive Portal Zone` values ('north', 'North'), ('south', 'South'), ('empty', 'Empty');
             insert into `tabPortal Checkout` values
               ('north',100,'SUCCESS','KES','live'), ('north',50,'SUCCESS','KES','live'),
@@ -82,6 +83,20 @@ class TestBalances(unittest.TestCase):
         row = self.finance.balances("live", "north")[0]
         self.assertEqual(row["withdrawn"], 126)
         self.assertEqual(row["available"], -11)
+
+    def test_new_transfer_reservation_settlement_fees_and_reversal_share_legacy_balance(self):
+        self.db.execute("insert into `tabZone Finance Entry` values ('north','live',0,50)")
+        self.assertEqual(self.finance.balances("live", "north")[0]["available"], 43)
+        with self.assertRaises(ValueError):
+            self.finance.ensure_funds("north", "live", 44)
+        self.db.execute("insert into `tabZone Finance Entry` values ('north','live',40,-40)")
+        self.assertEqual(self.finance.balances("live", "north")[0]["available"], 43)
+        self.db.execute("insert into `tabZone Finance Entry` values ('north','live',8,-10)")
+        self.assertEqual(self.finance.balances("live", "north")[0]["available"], 45)
+        self.db.execute("insert into `tabZone Finance Entry` values ('north','live',-8,0)")
+        self.assertEqual(self.finance.balances("live", "north")[0]["available"], 53)
+        self.db.execute("insert into `tabZone Finance Entry` values ('north','sandbox',999,0)")
+        self.assertEqual(self.finance.balances("live", "north")[0]["available"], 53)
 
     def test_insufficient_funds_and_locked_current_reads(self):
         self.finance.ensure_funds("north", "live", 93)
@@ -142,13 +157,17 @@ class TestRemittanceRules(unittest.TestCase):
         )
         self.payload = {
             "data": {
-                "id": TRANSFER_ID,
+                "id": TRANSFER_ID, "type": "send_money",
                 "attributes": {
-                    "source_identifier": "source-1", "currency": "KES", "status": "Success",
+                    "source_identifier": "source-1", "currency": "KES", "status": "Processed",
                     "metadata": {"zone_remittance": self.doc.name},
                     "destinations": [dict(
                         transfer_payload(self.doc, "")["destinations"][0], status="Success"
                     )],
+                    "transfer_batches": [{"disbursements": [{
+                        "destination_type": "mobile_wallet", "phone_number": self.doc.phone_number,
+                        "amount": 20, "status": "Transferred", "errors": None,
+                    }]}],
                 },
             },
         }
@@ -176,7 +195,7 @@ class TestRemittanceRules(unittest.TestCase):
     def test_confirmed_single_transfer(self):
         self.assertEqual(verified_transfer(self.payload, self.doc, TRANSFER_ID), "Paid")
         attrs = self.payload["data"]["attributes"]
-        attrs["status"] = attrs["destinations"][0]["status"] = "Failed"
+        attrs["transfer_batches"][0]["disbursements"][0]["status"] = "Failed"
         self.assertEqual(verified_transfer(self.payload, self.doc, TRANSFER_ID), "Failed")
 
     def test_wrong_recipient_or_metadata_cannot_release_funds(self):
@@ -191,9 +210,8 @@ class TestRemittanceRules(unittest.TestCase):
 
     def test_partial_or_unknown_outcome_is_not_paid(self):
         attrs = self.payload["data"]["attributes"]
-        attrs["destinations"][0]["status"] = "Pending"
-        with self.assertRaises(ValueError):
-            verified_transfer(self.payload, self.doc, TRANSFER_ID)
+        attrs["transfer_batches"][0]["disbursements"][0]["status"] = "Pending"
+        self.assertEqual(verified_transfer(self.payload, self.doc, TRANSFER_ID), "Pending")
         attrs["status"] = "Pending"
         self.assertEqual(verified_transfer(self.payload, self.doc, TRANSFER_ID), "Pending")
 
@@ -288,42 +306,21 @@ class TestRemittanceAPI(unittest.TestCase):
 
     def test_live_sending_is_blocked_until_sandbox_contract_validation(self):
         self.doc.provider_environment = "live"
-        with patch.object(self.api.requests, "post") as request, self.assertRaisesRegex(ValueError, "Live remittance"):
+        with patch.object(self.api.requests, "post") as request, self.assertRaisesRegex(ValueError, "Transfer Request"):
             self.api.send_remittance(self.doc.name)
         request.assert_not_called()
 
     def test_external_withdrawal_cannot_initiate_another_payment(self):
         self.doc.withdrawal_method = "External Withdrawal"
-        with patch.object(self.api.requests, "post") as request, self.assertRaisesRegex(ValueError, "ledger reconciliation"):
+        with patch.object(self.api.requests, "post") as request, self.assertRaisesRegex(ValueError, "Transfer Request"):
             self.api.send_remittance(self.doc.name)
         request.assert_not_called()
 
-    def test_intent_is_committed_before_provider_post_and_cannot_be_retried(self):
-        response = MagicMock(status_code=201)
-        response.headers = {"Location": self.connector.base_url + "/api/v2/send_money/" + TRANSFER_ID}
-
-        def post(*args, **kwargs):
-            self.frappe.db.commit.assert_called_once()
-            self.frappe.db.set_value.assert_called_with("Zone Remittance", self.doc.name, "status", "Sending")
-            self.assertFalse(kwargs["allow_redirects"])
-            return response
-
-        with patch.object(self.api.requests, "post", side_effect=post) as request:
-            result = self.api.send_remittance(self.doc.name)
-            self.assertEqual(result["status"], "Pending")
-            self.doc.status = "Pending"
-            with self.assertRaises(ValueError):
-                self.api.send_remittance(self.doc.name)
-            request.assert_called_once()
-
-    def test_timeout_keeps_reservation_and_logs_error(self):
-        with patch.object(self.api.requests, "post", side_effect=self.api.requests.Timeout("timeout")):
-            result = self.api.send_remittance(self.doc.name)
-        self.assertEqual(result["status"], "Unknown")
-        self.frappe.db.set_value.assert_called_with(
-            "Zone Remittance", self.doc.name, {"status": "Unknown", "last_error": "timeout"}
-        )
-        self.frappe.log_error.assert_called_once()
+    def test_legacy_api_cannot_bypass_new_approval_and_ledger_workflow(self):
+        with patch.object(self.api.requests, "post") as request, self.assertRaisesRegex(ValueError, "Transfer Request"):
+            self.api.send_remittance(self.doc.name)
+        request.assert_not_called()
+        self.frappe.db.commit.assert_not_called()
 
     def test_late_failure_cannot_overwrite_verified_paid_transfer(self):
         self.doc.status = "Paid"
@@ -347,6 +344,7 @@ class TestRemittanceDocument(unittest.TestCase):
     def setUp(self):
         self.frappe = MagicMock()
         self.frappe.throw.side_effect = throw
+        self.frappe.db.exists.return_value = False
         model = types.ModuleType("frappe.model.document")
         model.Document = object
         self.finance = load_module(

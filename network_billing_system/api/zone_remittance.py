@@ -1,15 +1,10 @@
-from urllib.parse import urlencode
-
 import frappe
 import requests
-from frappe.utils import get_url
 
 from network_billing_system.kopokopo_integration import KopokopoConnector
 from network_billing_system.portal_rules import payment_id
-from network_billing_system.remittance_rules import (
-    transfer_id_from_location, transfer_payload, verified_transfer,
-)
-from network_billing_system.zone_finance import FINANCE_ROLES, ensure_funds, lock_zone
+from network_billing_system.remittance_rules import verified_transfer
+from network_billing_system.zone_finance import FINANCE_ROLES, lock_zone
 from network_billing_system.api.captive_portal import _request_limit
 
 
@@ -58,59 +53,7 @@ def _failure(doc, exc):
 @frappe.whitelist(methods=["POST"])
 def send_remittance(remittance_id):
     frappe.only_for(FINANCE_ROLES)
-    if frappe.conf.get("enable_zone_remittance") not in (True, 1):
-        frappe.throw("Zone transfers are disabled. Enable only after sandbox validation and recipient review.")
-    doc = _lock_remittance(remittance_id)
-    if doc.withdrawal_method != "Kopo Kopo API":
-        frappe.throw("External withdrawals are ledger reconciliation only. No transfer can be initiated.")
-    if not doc.recipient or not frappe.db.get_value(
-        "Remittance Recipient",
-        {"name": doc.recipient, "enabled": 1, "registration_status": "Registered",
-         "zone": doc.zone, "provider_environment": doc.provider_environment},
-        "name",
-    ):
-        frappe.throw("Select an enabled registered recipient matching the remittance zone and environment.")
-    if doc.provider_environment == "live":
-        frappe.throw("Live remittance is not enabled in this release. Validate the payout response in sandbox first.")
-    if doc.status != "Queued" or doc.provider_transfer_id:
-        frappe.throw("This remittance was already sent or needs reconciliation. Do not resend it.")
-    ensure_funds(doc.zone, doc.provider_environment, 0)
-    callback = get_url("/api/method/network_billing_system.api.zone_remittance.transfer_callback?")
-    callback += urlencode({"remittance_id": doc.name})
-    if not callback.startswith("https://"):
-        frappe.throw("A public HTTPS site URL is required for transfer callbacks.")
-    payload = transfer_payload(doc, callback)
-    try:
-        connector = _connector(doc.provider_environment)
-    except (ValueError, requests.RequestException) as exc:
-        frappe.db.set_value("Zone Remittance", doc.name, "last_error", str(exc))
-        frappe.log_error(frappe.get_traceback(), "Zone remittance authentication: " + doc.name)
-        return {"status": "Queued", "error": True, "message": "Provider authentication failed. No transfer was initiated."}
-    frappe.db.set_value("Zone Remittance", doc.name, "status", "Sending")
-    # Persist the intent before the external side effect. A crash or timeout
-    # cannot make this document eligible for a second send.
-    frappe.db.commit()
-    try:
-        response = requests.post(
-            connector.base_url + "/api/v2/send_money",
-            json=payload,
-            headers={"Authorization": "Bearer " + connector.authentication_token, "Content-Type": "application/json"},
-            timeout=15, allow_redirects=False,
-        )
-        response.raise_for_status()
-        if response.status_code != 201:
-            raise ValueError("Kopo Kopo did not confirm transfer creation.")
-        transfer_id = transfer_id_from_location(response.headers.get("Location"), connector.base_url)
-    except (ValueError, requests.RequestException) as exc:
-        return _failure(doc, exc)
-    current = _lock_remittance(doc.name)
-    if current.provider_transfer_id and current.provider_transfer_id != transfer_id:
-        frappe.throw("A different transfer is attached to this remittance. Contact support.")
-    values = {"provider_transfer_id": transfer_id}
-    if current.status not in ("Paid", "Failed"):
-        values["status"] = "Pending"
-    frappe.db.set_value("Zone Remittance", doc.name, values)
-    return {"status": values.get("status", current.status)}
+    frappe.throw("Use Transfer Request and Transfer Batch for new API payouts. Legacy manual reconciliation remains available.")
 
 
 def _check(name, candidate=None):

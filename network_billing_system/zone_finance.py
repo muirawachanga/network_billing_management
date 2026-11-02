@@ -27,8 +27,8 @@ def balances(environment="live", zone=None):
         select z.name as zone, z.display_name,
           coalesce(p.payments, 0) as successful_payments,
           coalesce(p.collected, 0) as collected,
-          coalesce(r.reserved, 0) as reserved,
-          coalesce(r.withdrawn, 0) as withdrawn
+          coalesce(r.reserved, 0) + coalesce(l.reserved, 0) as reserved,
+          coalesce(r.withdrawn, 0) + coalesce(l.withdrawn, 0) as withdrawn
         from `tabCaptive Portal Zone` z
         left join (
           select zone, count(*) as payments, sum(amount) as collected
@@ -45,10 +45,15 @@ def balances(environment="live", zone=None):
           where docstatus=1 and provider_environment=%s
           group by zone
         ) r on r.zone=z.name
+        left join (
+          select zone, sum(reserved) as reserved, sum(debit) as withdrawn
+          from `tabZone Finance Entry` where environment=%s
+          group by zone
+        ) l on l.zone=z.name
         where (%s is null or z.name=%s)
         order by z.name
         """,
-        (environment, environment, zone, zone),
+        (environment, environment, environment, zone, zone),
         as_dict=True,
     )
     for row in rows:
@@ -82,6 +87,14 @@ def ensure_funds(zone, environment, amount):
     available -= sum(
         (money(row["amount"]) + money(row["fee_allowance"]) for row in withdrawals),
         Decimal(0),
+    )
+    entries = frappe.db.sql(
+        """select debit, reserved from `tabZone Finance Entry`
+        where zone=%s and environment=%s for update""",
+        (zone, environment), as_dict=True,
+    )
+    available -= sum(
+        (money(row["debit"]) + money(row["reserved"]) for row in entries), Decimal(0)
     )
     if money(amount) > available:
         frappe.throw("This zone has insufficient available funds.")

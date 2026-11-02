@@ -1,0 +1,26 @@
+{
+ "doctype":"Workspace","name":"Transfer Management","label":"Transfer Management","title":"Transfer Management",
+ "module":"Network Billing System","public":1,"is_hidden":0,"icon":"money-coins-1",
+ "modified":"2026-11-02 07:55:25.000000",
+ "content":"[{\"id\":\"transferHeader\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transfer Management</span>\",\"col\":12}},{\"id\":\"transferChart\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Zone Payment Overview\",\"col\":12}},{\"id\":\"operations\",\"type\":\"card\",\"data\":{\"card_name\":\"Operations\",\"col\":6}},{\"id\":\"configuration\",\"type\":\"card\",\"data\":{\"card_name\":\"Configuration\",\"col\":6}}]",
+ "charts":[{"chart_name":"Zone Payment Overview","label":"Zone Payment Overview"}],
+ "links":[
+  {"type":"Card Break","label":"Operations","link_count":8},
+  {"type":"Link","label":"Transfer Requests","link_type":"DocType","link_to":"Transfer Request"},
+  {"type":"Link","label":"Transfer Batches","link_type":"DocType","link_to":"Transfer Batch"},
+  {"type":"Link","label":"Transfer Attempts","link_type":"DocType","link_to":"Transfer Attempt"},
+  {"type":"Link","label":"Transfer Disbursements","link_type":"DocType","link_to":"Transfer Disbursement"},
+  {"type":"Link","label":"Transfer Reconciliation","link_type":"DocType","link_to":"Transfer Reconciliation"},
+  {"type":"Link","label":"Zone Finance Entries","link_type":"DocType","link_to":"Zone Finance Entry"},
+  {"type":"Link","label":"Zone Payment Dashboard","link_type":"Report","link_to":"Zone Payment Dashboard","is_query_report":1},
+  {"type":"Link","label":"Legacy Manual Remittances","link_type":"DocType","link_to":"Zone Remittance"},
+  {"type":"Card Break","label":"Configuration","link_count":6},
+  {"type":"Link","label":"Transfer Settings","link_type":"DocType","link_to":"Transfer Settings"},
+  {"type":"Link","label":"Provider Accounts","link_type":"DocType","link_to":"Transfer Provider Account"},
+  {"type":"Link","label":"Recipients","link_type":"DocType","link_to":"Transfer Recipient"},
+  {"type":"Link","label":"Recipient Accounts","link_type":"DocType","link_to":"Transfer Recipient Account"},
+  {"type":"Link","label":"Fee Policies","link_type":"DocType","link_to":"Transfer Fee Policy"},
+  {"type":"Link","label":"Zone Remittance Policies","link_type":"DocType","link_to":"Zone Remittance Policy"}
+ ],
+ "roles":[{"role":"System Manager"},{"role":"Transfer Preparer"},{"role":"Transfer Approver"},{"role":"Transfer Operator"},{"role":"Transfer Reconciler"}]
+}

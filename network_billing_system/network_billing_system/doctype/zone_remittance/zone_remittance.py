@@ -69,12 +69,18 @@ class ZoneRemittance(Document):
         self.provider_transfer_id = None
         self.last_error = ""
         if self.withdrawal_method == "External Withdrawal":
+            if (frappe.db.exists("Transfer Reconciliation", {
+                    "provider_reference": self.external_reference, "docstatus": 1})
+                    or frappe.db.exists("Transfer Disbursement", {"transaction_reference": self.external_reference})):
+                frappe.throw("This provider transaction is already recorded in Transfer Management.")
             try:
                 self.provider_transfer_id = payment_id(self.external_reference)
             except ValueError:
                 # Some provider statement references are not transfer UUIDs.
                 # The separate unique external reference still prevents duplicates.
                 self.provider_transfer_id = None
+            if self.provider_transfer_id and frappe.db.exists("Transfer Batch", {"provider_id": self.provider_transfer_id}):
+                frappe.throw("This transfer is already tracked in Transfer Management.")
 
     def on_submit(self):
         frappe.only_for(FINANCE_ROLES)

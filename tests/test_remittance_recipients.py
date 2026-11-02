@@ -44,7 +44,7 @@ class TestRecipients(unittest.TestCase):
                 doc = self.recipient(kind)
                 destination = transfer_payload(doc, "https://example.test")["destinations"][0]
                 self.assertEqual(destination["type"], kind)
-                self.assertEqual(destination["amount"], "100")
+                self.assertEqual(destination["amount"], 100)
                 for field, value in destination_details(doc).items():
                     self.assertEqual(destination[field], value)
                 if kind.startswith("merchant_"):

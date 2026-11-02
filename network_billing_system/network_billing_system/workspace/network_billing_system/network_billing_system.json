@@ -162,9 +162,21 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "MPESA",
-   "link_count": 5,
+   "link_count": 8,
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "label": "Transfer Requests",
+   "link_to": "Transfer Request",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "label": "Transfer Reconciliation",
+   "link_to": "Transfer Reconciliation",
+   "link_type": "DocType",
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -177,13 +189,13 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Zone Remittances",
+   "label": "Legacy Zone Remittances",
    "link_to": "Zone Remittance",
    "link_type": "DocType",
    "type": "Link"
   },
   {
-   "label": "Remittance Recipients",
+   "label": "Legacy Remittance Recipients",
    "link_to": "Remittance Recipient",
    "link_type": "DocType",
    "type": "Link"
@@ -219,7 +231,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-11-02 07:13:26.000000",
+ "modified": "2026-11-02 07:55:25.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Network Billing System",

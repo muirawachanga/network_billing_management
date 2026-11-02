@@ -5,78 +5,54 @@ M-Pesa, and reconnecting after payment.
 
 ## Zone payment dashboard and remittances
 
-### Recipient/account registry
+### Deployment and configuration
 
-Open **Remittance Recipients** in the MPESA workspace card before creating
-an API payout. Create an account with its nickname, zone, environment and
-account type. The supported Send Money destination categories are:
-`mobile_wallet`, `bank_account`, `till`, `paybill`, `merchant_wallet`, and
-`merchant_bank_account`. Bank accounts require the provider's branch reference;
-merchant bank accounts additionally require its settlement method. These are
-the SDK categories, not a claim of international-bank support.
+After deploying the app, run `bench --site mel.daitkenya.com migrate` and
+restart the Frappe processes. Open the **Transfer Management** workspace.
+Migration creates four roles: **Transfer Preparer**, **Transfer Approver**,
+**Transfer Operator**, and **Transfer Reconciler**. Assign them deliberately;
+Network Administrator alone does not grant payout authority. System Manager
+can administer all transfer operations.
 
-**Register with Kopo Kopo** creates external contacts through
-`POST /api/v2/external_recipients`, merchant wallets through
-`POST /api/v2/merchant_wallets`, and merchant bank accounts through
-`POST /api/v2/merchant_bank_accounts`. Registration is sandbox-only and uses
-the separate sandbox credentials. Registration does not send money. The
-returned provider UUID is saved; uncertain registration is not automatically
-retried. Provider approval/activation requirements still apply.
+Transfers and live sending are **disabled by default** in **Transfer Settings**.
+Set the self-approval threshold, per-request limit and bounded reconciliation
+limit before enabling operations. Requests at or above the threshold require
+a different approver; evidence-backed manual reconciliations also require a
+different submitter at that threshold. Scheduled preparation has its own switch.
+The existing checkout, voucher allocation and automatic portal login are unchanged.
 
-Select the registered account on an API remittance. It must be enabled and
-match the zone and environment. Its destination details are copied server-side
-into the draft and preserved on submission. External Send Money destinations
-use the registered contact's details as specified by the official SDK;
-merchant destinations use the registered account's `reference`. Do not replace
-external fields with an assumed reference-only payload. Zone settings now
-include a default registered recipient; multiple recipients can share a zone.
-Registered account identities cannot be edited; disable one and create a
-replacement when account details change. Existing queued API drafts must
-select a registered recipient before they can send. Manual external
-withdrawal reconciliation remains independent of account registration.
+Create these records in order:
 
-This adds account selection and all six destination payload mappings, not
-automatic fee policies or multi-destination batch settlement. Live API sending
-and live account registration remain blocked pending sandbox verification.
+1. **Transfer Provider Account**: environment, source till and optional site-config
+   credential-key names. Multiple accounts must not be used to double-count a
+   shared provider wallet. Environment is immutable; the source is immutable once
+   referenced by a submitted request. Keep referenced providers enabled until
+   reconciliation finishes; disabling an account also blocks its status lookups.
+2. **Transfer Recipient** and **Transfer Recipient Account**: identity/contact,
+   zone, provider account and destination details. Supported types are
+   `mobile_wallet`, `bank_account`, `till`, `paybill`, `merchant_wallet` and
+   `merchant_bank_account`. External bank accounts require RTS; merchant bank
+   accounts require RTS or EFT. These are not international-transfer support.
+3. Optionally select **Register with Kopo Kopo** on a draft account. This creates
+   a provider contact/account, not a payment. Its Location UUID is stored only
+   as the registration resource ID. Obtain and confirm the **payout reference**
+   from the provider application separately; never assume it equals that UUID.
+   An Approver/System Manager verifies account details using private evidence.
+   Only accounts with readiness **Verified** can be used. Uncertain registration
+   is not retried automatically; resolve it against provider records.
+4. **Transfer Fee Policy**: destination type, optional settlement method, fixed
+   charge, percentage, minimum and effective dates. There is no silent zero-fee
+   fallback. The discussed KES 50/KES 500 figures are not hardcoded tariffs:
+   confirm each provider charge/category and configure it explicitly.
+5. **Zone Remittance Policy**: zone, provider, default account and fee policy,
+   retained balance, maximum amount and optional schedule/minimum. Assign a
+   separate policy for each destination tariff needed by the same zone/provider
+   (for example mobile, till and bank), rather than duplicating provider accounts.
 
-After `bench --site <site> migrate`, open **Network Billing System → MPESA →
-Zone Payment Dashboard**. The standard Frappe Script Report includes summary
-totals, a zone comparison chart, and per-zone successful-payment counts,
-collections, reserved withdrawals, withdrawn amounts, and available funds.
-The **Zone Payment Overview** native Frappe Dashboard Chart is embedded at the
-top of the workspace and is also available in the **Zone Finance** Dashboard.
-Live and sandbox balances are separate; live is the default. All successful
-historical package checkouts are included automatically. No checkout, voucher,
-SMS, or portal-login behavior has been changed.
-
-Balances assume 100% of a zone's successful KES collections belong to that
-zone, with no opening balance, commission, refund, or revenue split. This is
-an internal allocation ledger, **not Kopo Kopo's settled wallet balance**.
-Availability is collected minus submitted pending/uncertain remittances minus
-paid remittances, including each remittance's fee allowance. Failed transfers
-release the reservation only after verified provider failure. Drafts do not
-reserve funds. Use a conservative fee allowance agreed with the provider;
-it is deducted in full, not automatically replaced with actual provider fees.
-
-Configure the default mobile or bank recipient and Kopo Kopo source identifier
-on **Captive Portal Zone**. Selecting a zone on a new **Zone Remittance**
-copies those defaults; the submitted record preserves the recipient snapshot.
-Submission reserves funds under a per-zone database lock but does not send
-money. Only System Managers and Network Administrators can operate it.
-
-Transfers are **disabled by default**, and live sending is blocked in this
-first release pending sandbox verification of the provider status schema.
-Before enabling sandbox transfers with
-`enable_zone_remittance` as a boolean site setting, validate in sandbox with
-your Kopo Kopo account, confirm Pay permissions, source funds, charges, bank
-branch reference, and recipient. **Send Remittance** performs an explicit,
-confirmed single-recipient transfer. Mobile destinations currently support
-Safaricom M-Pesa; bank destinations require account name, number and provider
-bank branch reference. A public HTTPS site URL is required for callbacks.
-There is no automatic payout schedule or automatic retry.
-Live remittances reuse the existing `kopokopo_client_id` and
-`kopokopo_client_secret` by default. Sandbox remittances require their own
-credentials. Configure these site-specific keys in `sites/<site>/site_config.json`:
+Live provider accounts use existing `kopokopo_client_id` and
+`kopokopo_client_secret` unless a complete dedicated override or explicit
+credential-key pair is configured. Sandbox requires separate credentials in
+`sites/<site>/site_config.json`:
 
 ```json
 {
@@ -85,60 +61,105 @@ credentials. Configure these site-specific keys in `sites/<site>/site_config.jso
 }
 ```
 
-Sandbox never falls back to checkout credentials. Optionally set both
+Sandbox never falls back to live checkout credentials. Optionally set both
 `kopokopo_remittance_live_client_id` and `kopokopo_remittance_live_client_secret`
 to use a dedicated live payout application instead. A partial override is
-rejected rather than mixing credentials. Keep existing checkout keys unchanged.
-Restart the Frappe processes after changing site configuration. Live sending
-remains blocked regardless of whether live credentials are configured.
-Use a separate test site for sandbox testing where possible.
+rejected. Keep checkout keys unchanged. Use a separate sandbox site where possible.
+A public HTTPS site URL and site encryption key are required for payout callbacks.
 
-Each remittance supports one registered destination of any supported type, but different
-remittance records can pay different recipients; zone recipient settings are
-defaults, not a restriction to one global recipient. Kopo Kopo's endpoint
-supports a `destinations` array for batch payouts. This first-stage ledger
-intentionally sends one destination per request so a partial batch cannot
-incorrectly mark an entire zone withdrawal paid. Multi-recipient batching
-and per-destination settlement are not implemented.
+### Prepare, approve and send
 
-The integration follows Kopo Kopo's official Python SDK contract:
-`POST /api/v2/send_money` with `source_identifier`, `currency`, `destinations`,
-`metadata`, and `_links.callback_url`. Mobile destinations use `mobile_wallet`,
-`phone_number`, and `network`; bank destinations use `bank_account`,
-`account_name`, `account_number`, and `bank_branch_ref`.
-Status is queried with authenticated `GET /api/v2/send_money/<UUID>`;
-callbacks only trigger that lookup. The verifier requires matching ID,
-metadata, source, currency, single recipient, amount and terminal destination
-status. A differing or incomplete provider response remains **Unknown** with
-funds reserved and an Error Log; verify the account's sandbox response before
-production use. A request UUID or callback alone never means paid.
+Create and submit a **Transfer Request** with purpose, account, tariff and amount.
+**Zone** fee bearer means amount is the recipient payout and fees are extra;
+**Recipient** means amount is the gross zone budget and fees reduce the payout.
+The result must be an exact positive whole-KES payout, not silently rounded.
+Submission snapshots the destination and fee rule but does not reserve funds.
+**Approve and Reserve Funds** rechecks the configuration and locks the zone
+while reserving principal plus estimated fee, preserving the retained balance.
 
-If a transfer times out, do not create a replacement. Use **Check Transfer
-Status**, supplying its provider UUID if the initial response was lost.
-Sending, Pending, Unknown and Paid records cannot be cancelled. Queued records
-may be cancelled before sending. This deployment has not performed a real
-transfer; provider settlement and live/sandbox integration require operator
-validation.
+An Operator creates a **Transfer Batch** from one approved request or selected
+approved requests in the list. A batch uses one provider account, with no duplicate
+recipient identities. Multiple destinations are allowed only for homogeneous
+external mobile-wallet or external-bank requests; other types use single-item
+batches. Inspect the accounts and amounts, then confirm **Send Batch**.
+Amounts are JSON integers. Blind send-all requests are never generated.
 
-### Reconcile withdrawals made directly in Kopo Kopo
+**Transfer Attempt** persists and commits the send intent before the payout POST.
+Each batch has one attempt; a timeout, lost response or uncertain result must
+never trigger a retry or replacement transfer. **Reconcile Provider Status**
+accepts the existing Send Money UUID if the initiation response was lost.
+If no UUID can be found, retain the reservation and obtain a provider trace;
+a timeout alone is not evidence that the payment failed.
+Use **Unbatch Before Sending** to return a ready, never-attempted batch to approved
+requests; this retains their reservations. Only unbatched, unsent requests can be
+cancelled to release funds. Attempted batches remain reserved until verified
+settlement or evidence-backed reconciliation.
 
-Create a **Zone Remittance** with **Withdrawal Method = External Withdrawal**
-when the money was already withdrawn outside this app. Select its zone,
-environment, source and recipient; enter the actual amount and charges
-(using the fee allowance field), unique Kopo Kopo transaction reference,
-withdrawal date, and private statement/receipt attachment. Confirm that you
-verified completion against provider records, then submit.
+Authenticated `GET /api/v2/send_money/<UUID>` checks resource ID, metadata,
+source, currency, destinations and amounts. Request status **Processed** does
+not mean every recipient was paid: individual
+`transfer_batches[].disbursements[]` must report **Transferred** or **Failed**.
+Disbursements are matched by account identity or explicitly confirmed reference,
+never array position. Partial batches settle only matched recipients.
+**Transfer Disbursement** preserves terminal evidence; missing/ambiguous results
+remain reserved and require review. Null EFT transaction references are supported.
 
-This records a **Paid** ledger entry without calling the payout API or sending
-money again. Duplicate external references are rejected; when the reference
-is a transfer UUID it also shares the unique provider-ID constraint with API
-remittances. Submitted external withdrawals cannot be cancelled or edited.
-They can expose a negative available balance if the real withdrawal exceeded
-the recorded zone entitlement; this intentionally reflects the financial
-shortfall instead of refusing to record an already-completed payment.
-Do not import an API remittance a second time as an external withdrawal:
-reconcile the original record instead. An external entry is administrator
-attestation with evidence, not automatic provider verification.
+Callbacks carry a site-HMAC capability token and only trigger authenticated
+provider lookup. **This is not verification of `X-KopoKopo-Signature`**:
+the provider's signature algorithm/encoding still needs confirmation. Callback
+content, a registration UUID or a Send Money UUID alone never proves payment.
+
+### Fees, external withdrawals and corrections
+
+Use **Transfer Reconciliation**, with private provider evidence, an explicit
+verification checkbox, reference and exact zone allocations:
+
+- **External Withdrawal** records an already-completed withdrawal without sending
+  money. Allocate the full actual debit, including confirmed charges. It may
+  expose a negative balance; never import a known API payout twice.
+- **Transfer Outcome** manually resolves a sent, pending/uncertain request using
+  its existing Send Money UUID and evidence of Paid/Failed. It is an operator
+  attestation, not automatic provider verification.
+- **Actual Fee** posts the confirmed charge once per Paid/Failed request and
+  releases its estimated-fee reservation. Explicit zero is supported. Principal
+  settlement alone does not release the fee hold, even for failed transfers.
+  Higher actual charges expose a shortfall rather than hiding it.
+- **Reversal** appends an exact reversal of a positive debit, including a confirmed
+  returned payment or fee correction. It does not recreate a released reservation,
+  edit history, cancel provider money movement or resend money.
+
+**Zone Finance Entry** is append-only, with unique posting keys and protected
+operations. Reconciliations cannot be cancelled after posting. Duplicate
+references and reversals are rejected. Live and sandbox balances stay separate.
+
+### Dashboard, schedules and migration
+
+The **Zone Payment Dashboard**, native **Zone Payment Overview** chart and
+**Zone Finance** dashboard show collections, reservations, withdrawals and
+availability. Transfer roles can read the finance report without checkout access.
+Balances assume 100% of successful KES checkout collections belong to the zone,
+with no opening balances, commissions, refunds or revenue splits. They are an
+internal allocation ledger, **not the provider's settled wallet balance**.
+Confirm actual wallet liquidity, Pay permissions and bank details before sending.
+
+Checkout collections are read directly, including historical successes; the
+bounded scheduler mirrors them into the ledger for audit without counting twice.
+Every five minutes it also checks eligible batches and, when explicitly enabled,
+prepares daily/weekly/monthly requests. Period keys prevent duplicate preparation;
+outstanding requests block accumulating more. **Schedules never approve or send.**
+
+Existing **Zone Remittance** records remain in balance calculations. Their API
+sender is retired, including the old `enable_zone_remittance` bypass; use the
+new workflow for all new payouts. Existing uncertain API records retain their
+reservations and status checks now use the documented disbursement schema.
+Cancel unsent legacy requests before replacing them. Do not copy sent/paid
+legacy records into new requests or import their withdrawals again. Legacy
+recipient records are retained; create and verify new Transfer Recipient Accounts
+with confirmed references rather than treating registration IDs as payout IDs.
+
+No live provider transfer or Frappe-site migration has been performed by this
+change. Validate installation and all relevant sandbox destination, partial
+settlement and fee scenarios before explicitly enabling **Allow Live**.
 
 ## Portal experience
 

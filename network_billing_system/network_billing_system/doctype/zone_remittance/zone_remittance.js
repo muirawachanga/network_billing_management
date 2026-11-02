@@ -51,14 +51,7 @@ frappe.ui.form.on('Zone Remittance', {
 			});
 		};
 		if (frm.doc.status === 'Queued') {
-			if (frm.doc.provider_environment === 'live') {
-				frm.set_intro(__('Live transfers are not enabled in this release. Validate the payout response in sandbox first.'), 'orange');
-				return;
-			}
-			frm.add_custom_button(__('Send Remittance'), () => {
-				frappe.confirm(__('This submits a sandbox remittance request to Kopo Kopo for the recipient shown on this document. Continue?'),
-					() => call('send_remittance'));
-			});
+			frm.set_intro(__('Use Transfer Request and Transfer Batch for new API payouts. Cancel this unsent legacy reservation first.'), 'orange');
 		} else if (['Sending', 'Pending', 'Unknown'].includes(frm.doc.status)) {
 			frm.add_custom_button(__('Check Transfer Status'), () => {
 				if (!frm.doc.provider_transfer_id) {

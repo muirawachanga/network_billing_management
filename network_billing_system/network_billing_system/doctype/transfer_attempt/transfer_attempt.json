@@ -1,0 +1,13 @@
+{
+ "doctype":"DocType","name":"Transfer Attempt","module":"Network Billing System","autoname":"hash","engine":"InnoDB",
+ "field_order":["batch","started_at","provider_id","status","http_status","diagnostic"],
+ "fields":[
+  {"fieldname":"batch","fieldtype":"Link","options":"Transfer Batch","label":"Batch","unique":1,"reqd":1},
+  {"fieldname":"started_at","fieldtype":"Datetime","label":"Started At","read_only":1},
+  {"fieldname":"provider_id","fieldtype":"Data","label":"Provider UUID","read_only":1},
+  {"fieldname":"status","fieldtype":"Select","options":"Sending\nAccepted\nNeeds Review","label":"Status","read_only":1},
+  {"fieldname":"http_status","fieldtype":"Int","label":"HTTP Status","read_only":1},
+  {"fieldname":"diagnostic","fieldtype":"Small Text","label":"Diagnostic","read_only":1}
+ ],
+ "permissions":[{"role":"System Manager","read":1,"report":1},{"role":"Transfer Operator","read":1,"report":1},{"role":"Transfer Reconciler","read":1,"report":1}]
+}

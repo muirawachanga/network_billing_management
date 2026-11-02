@@ -4,7 +4,7 @@ from network_billing_system.zone_finance import FINANCE_ROLES, balances
 
 
 def execute(filters=None):
-    frappe.only_for(FINANCE_ROLES)
+    frappe.only_for(FINANCE_ROLES + ("Transfer Preparer", "Transfer Approver", "Transfer Operator", "Transfer Reconciler"))
     filters = filters or {}
     rows = balances(filters.get("provider_environment") or "live", filters.get("zone"))
     columns = [

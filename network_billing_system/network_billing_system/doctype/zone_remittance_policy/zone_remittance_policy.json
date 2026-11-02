@@ -1,0 +1,32 @@
+{
+ "doctype": "DocType",
+ "name": "Zone Remittance Policy",
+ "module": "Network Billing System",
+ "autoname": "hash",
+ "title_field": "zone",
+ "track_changes": 1,
+ "engine": "InnoDB",
+ "field_order": ["zone", "provider_account", "enabled", "recipient_account", "fee_policy", "fee_bearer", "currency", "retained_balance", "maximum_amount", "minimum_payout", "schedule", "schedule_enabled", "approval_needed"],
+ "fields": [
+  {"fieldname": "zone", "fieldtype": "Link", "options": "Captive Portal Zone", "label": "Zone", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "provider_account", "fieldtype": "Link", "options": "Transfer Provider Account", "label": "Provider Account", "reqd": 1, "in_list_view": 1, "description": "One policy per zone, provider account and fee policy. Each destination tariff can have its own defaults and limits."},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "0"},
+  {"fieldname": "recipient_account", "fieldtype": "Link", "options": "Transfer Recipient Account", "label": "Recipient Account", "reqd": 1},
+  {"fieldname": "fee_policy", "fieldtype": "Link", "options": "Transfer Fee Policy", "label": "Fee Policy", "reqd": 1},
+  {"fieldname": "fee_bearer", "fieldtype": "Select", "label": "Fee Bearer", "options": "Zone\nRecipient", "default": "Zone", "reqd": 1},
+  {"fieldname": "currency", "fieldtype": "Select", "label": "Currency", "options": "KES", "default": "KES", "reqd": 1},
+  {"fieldname": "retained_balance", "fieldtype": "Currency", "label": "Retained Zone Balance (KES)", "default": "0", "precision": "2"},
+  {"fieldname": "maximum_amount", "fieldtype": "Currency", "label": "Maximum Payout Amount (KES)", "reqd": 1, "precision": "2", "description": "Positive hard cap; zero is never unlimited."},
+  {"fieldname": "minimum_payout", "fieldtype": "Currency", "label": "Minimum Scheduled Payout (KES)", "default": "0", "precision": "2", "description": "Must be positive when the schedule is enabled."},
+  {"fieldname": "schedule", "fieldtype": "Select", "label": "Schedule", "options": "Daily\nWeekly\nMonthly", "default": "Daily", "reqd": 1},
+  {"fieldname": "schedule_enabled", "fieldtype": "Check", "label": "Enable Scheduled Payouts", "default": "0"},
+  {"fieldname": "approval_needed", "fieldtype": "Check", "label": "Approval Required", "default": "1"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1},
+  {"role": "Transfer Approver", "create": 1, "read": 1, "write": 1},
+  {"role": "Transfer Preparer", "read": 1},
+  {"role": "Transfer Operator", "read": 1},
+  {"role": "Transfer Reconciler", "read": 1}
+ ]
+}

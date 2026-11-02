@@ -35,12 +35,11 @@ function form(status, provider = 'transfer-id', environment = 'sandbox') {
   return {frm, handlers, click: () => button(), confirm: () => confirmed(), request: () => request, hasButton: () => Boolean(button), intro: () => intro};
 }
 
-test('sending requires explicit confirmation and calls the separate payout endpoint', async () => {
+test('legacy sending is replaced by the approved transfer request workflow', () => {
   const page = form('Queued');
-  page.click();
+  assert.equal(page.hasButton(), false);
+  assert.match(page.intro(), /Transfer Request/);
   assert.equal(page.request(), undefined);
-  await page.confirm();
-  assert.match(page.request().method, /zone_remittance.send_remittance$/);
 });
 
 test('pending transfer can only check status, not send again', async () => {
@@ -61,7 +60,7 @@ test('zone selection copies recipient defaults to a draft', async () => {
 test('live remittance has no send button and explains the rollout gate', () => {
   const page = form('Queued', null, 'live');
   assert.equal(page.hasButton(), false);
-  assert.match(page.intro(), /Live transfers are not enabled/);
+  assert.match(page.intro(), /Transfer Request/);
 });
 
 test('an external paid withdrawal has no transfer action', () => {

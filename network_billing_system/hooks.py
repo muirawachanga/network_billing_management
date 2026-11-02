@@ -118,9 +118,14 @@ scheduler_events = {
     "cron": {
         "* * * * *": [
             "network_billing_system.api.captive_portal.reconcile_pending_payments"
-        ]
+        ],
+        "*/5 * * * *": ["network_billing_system.transfer_tasks.run"]
     }
 }
+
+after_migrate = ["network_billing_system.transfer_setup.after_migrate"]
+before_migrate = ["network_billing_system.transfer_setup.after_migrate"]
+before_install = "network_billing_system.transfer_setup.after_migrate"
 
 #scheduler_events = {
 #    "cron": {

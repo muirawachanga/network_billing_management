@@ -3,7 +3,7 @@
  "name": "Zone Payment Overview",
  "chart_name": "Zone Payment Overview",
  "module": "Network Billing System",
- "modified": "2026-11-01 13:31:22.000000",
+ "modified": "2026-11-02 07:55:25.000000",
  "is_standard": 1,
  "chart_type": "Report",
  "report_name": "Zone Payment Dashboard",
@@ -11,5 +11,5 @@
  "type": "Bar",
  "filters_json": "{\"provider_environment\":\"live\"}",
  "is_public": 0,
- "roles": [{"role": "System Manager"}, {"role": "Network Administrator"}]
+ "roles": [{"role": "System Manager"}, {"role": "Network Administrator"}, {"role":"Transfer Preparer"}, {"role":"Transfer Approver"}, {"role":"Transfer Operator"}, {"role":"Transfer Reconciler"}]
 }
