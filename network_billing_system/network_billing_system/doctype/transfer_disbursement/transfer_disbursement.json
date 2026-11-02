@@ -1,0 +1,13 @@
+{
+ "doctype":"DocType","name":"Transfer Disbursement","module":"Network Billing System","autoname":"hash","engine":"InnoDB",
+ "field_order":["batch","transfer_request","status","amount","destination_reference","transaction_reference"],
+ "fields":[
+  {"fieldname":"batch","fieldtype":"Link","options":"Transfer Batch","label":"Batch","reqd":1},
+  {"fieldname":"transfer_request","fieldtype":"Link","options":"Transfer Request","label":"Transfer Request","reqd":1},
+  {"fieldname":"status","fieldtype":"Select","options":"Paid\nFailed\nPending","label":"Status","reqd":1,"in_list_view":1},
+  {"fieldname":"amount","fieldtype":"Currency","label":"Amount (KES)","reqd":1},
+  {"fieldname":"destination_reference","fieldtype":"Data","label":"Provider Destination Reference"},
+  {"fieldname":"transaction_reference","fieldtype":"Data","label":"Transaction Reference"}
+ ],
+ "permissions":[{"role":"System Manager","read":1,"report":1},{"role":"Transfer Reconciler","read":1,"report":1},{"role":"Transfer Operator","read":1,"report":1}]
+}

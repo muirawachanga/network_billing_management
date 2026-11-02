@@ -7,14 +7,44 @@
  "engine": "InnoDB",
  "field_order": [
   "package_name",
-  "description"
+  "zone",
+  "display_name",
+  "description",
+  "enabled",
+  "price",
+  "duration_minutes"
  ],
  "fields": [
+  {"fieldname": "zone", "fieldtype": "Link", "options": "Captive Portal Zone", "label": "Zone", "reqd": 1},
   {
    "fieldname": "package_name",
    "fieldtype": "Data",
    "label": "Package Name",
    "unique": 1
+  },
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "label": "Display Name"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Available on Captive Portal"
+  },
+  {
+   "fieldname": "price",
+   "fieldtype": "Currency",
+   "label": "Price (KES)",
+   "reqd": 1
+  },
+  {
+   "description": "Must match the duration of vouchers generated in pfSense. pfSense enforces usage and expiry.",
+   "fieldname": "duration_minutes",
+   "fieldtype": "Int",
+   "label": "Voucher Duration (Minutes)",
+   "reqd": 1
   },
   {
    "fieldname": "description",
@@ -24,7 +54,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-07-01 12:41:13.916430",
+ "modified": "2026-10-17 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Internet Package Profile",
@@ -39,6 +69,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Network Administrator",
    "share": 1,
    "write": 1
   }

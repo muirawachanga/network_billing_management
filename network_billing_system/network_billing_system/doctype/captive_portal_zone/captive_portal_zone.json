@@ -1,0 +1,28 @@
+{
+ "doctype": "DocType",
+ "name": "Captive Portal Zone",
+ "module": "Network Billing System",
+ "autoname": "field:zone_id",
+ "engine": "InnoDB",
+ "modified": "2026-11-02 07:13:26.000000",
+ "field_order": ["zone_id", "display_name", "enabled", "description", "remittance_section", "default_remittance_recipient", "remittance_recipient_name", "remittance_destination_type", "remittance_phone_number", "remittance_account_name", "remittance_account_number", "remittance_bank_branch_ref", "remittance_source_identifier"],
+ "fields": [
+  {"fieldname": "zone_id", "fieldtype": "Data", "label": "Zone ID", "reqd": 1, "unique": 1},
+  {"fieldname": "display_name", "fieldtype": "Data", "label": "Display Name"},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "0"},
+  {"fieldname": "description", "fieldtype": "Small Text", "label": "Description"},
+  {"fieldname": "remittance_section", "fieldtype": "Section Break", "label": "Default Remittance Recipient"},
+  {"fieldname": "default_remittance_recipient", "fieldtype": "Link", "options": "Remittance Recipient", "label": "Default Registered Recipient"},
+  {"fieldname": "remittance_recipient_name", "fieldtype": "Data", "label": "Recipient Name"},
+  {"fieldname": "remittance_destination_type", "fieldtype": "Select", "label": "Destination Type", "options": "\nmobile_wallet\nbank_account"},
+  {"fieldname": "remittance_phone_number", "fieldtype": "Data", "label": "Mobile Number"},
+  {"fieldname": "remittance_account_name", "fieldtype": "Data", "label": "Bank Account Name"},
+  {"fieldname": "remittance_account_number", "fieldtype": "Data", "label": "Bank Account Number"},
+  {"fieldname": "remittance_bank_branch_ref", "fieldtype": "Data", "label": "Kopo Kopo Bank Branch Reference"},
+  {"fieldname": "remittance_source_identifier", "fieldtype": "Data", "label": "Kopo Kopo Source Identifier"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1, "report": 1},
+  {"role": "Network Administrator", "create": 1, "read": 1, "write": 1, "report": 1}
+ ]
+}

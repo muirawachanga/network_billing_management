@@ -1,0 +1,11 @@
+{
+ "doctype":"DocType","name":"Transfer Batch Item","module":"Network Billing System","istable":1,
+ "fields":[
+  {"fieldname":"transfer_request","fieldtype":"Link","options":"Transfer Request","label":"Transfer Request","reqd":1,"in_list_view":1},
+  {"fieldname":"zone","fieldtype":"Link","options":"Captive Portal Zone","label":"Zone","read_only":1},
+  {"fieldname":"recipient_account","fieldtype":"Link","options":"Transfer Recipient Account","label":"Recipient Account","read_only":1,"in_list_view":1},
+  {"fieldname":"recipient_amount","fieldtype":"Currency","label":"Payout (KES)","read_only":1,"in_list_view":1},
+  {"fieldname":"estimated_fee","fieldtype":"Currency","label":"Estimated Fee (KES)","read_only":1}
+ ],
+ "field_order":["transfer_request","zone","recipient_account","recipient_amount","estimated_fee"],"permissions":[]
+}

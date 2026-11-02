@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "enable_package_portal",
   "sms_gateway_server",
   "sms_api_key",
   "allow_code_resend",
@@ -28,6 +29,13 @@
   "note"
  ],
  "fields": [
+  {
+   "default": "0",
+   "fieldname": "enable_package_portal",
+   "fieldtype": "Check",
+   "label": "Enable Package Captive Portal",
+   "description": "Enables package checkout APIs and disables automatic voucher SMS on payment callbacks. Manual SMS remains available for legacy vouchers."
+  },
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
@@ -137,7 +145,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-07-06 20:42:57.091564",
+ "modified": "2026-10-15 18:31:19.739000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Kopokopo Mpesa Setting",
