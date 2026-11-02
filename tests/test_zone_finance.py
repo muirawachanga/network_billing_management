@@ -247,8 +247,28 @@ class TestRemittanceAPI(unittest.TestCase):
             "kopokopo_client_id": "checkout-live-id",
             "kopokopo_client_secret": "checkout-live-secret",
         }
-        with self.assertRaisesRegex(ValueError, "separate sandbox"):
+        with self.assertRaisesRegex(ValueError, "complete sandbox"):
             self.api._connector("sandbox")
+        self.api.KopokopoConnector.assert_not_called()
+
+    def test_live_remittance_reuses_existing_credentials_by_default(self):
+        self.frappe.conf = {
+            "kopokopo_client_id": "existing-live-id",
+            "kopokopo_client_secret": "existing-live-secret",
+        }
+        self.api._connector("live")
+        self.api.KopokopoConnector.assert_called_once_with(
+            env="live", app_key="existing-live-id", app_secret="existing-live-secret"
+        )
+
+    def test_partial_live_override_is_not_mixed_with_existing_credentials(self):
+        self.frappe.conf = {
+            "kopokopo_remittance_live_client_id": "override-id",
+            "kopokopo_client_id": "existing-id",
+            "kopokopo_client_secret": "existing-secret",
+        }
+        with self.assertRaisesRegex(ValueError, "complete live"):
+            self.api._connector("live")
         self.api.KopokopoConnector.assert_not_called()
 
     def test_disabled_and_unauthorized_requests_cannot_send(self):

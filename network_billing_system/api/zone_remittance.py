@@ -19,8 +19,11 @@ def _connector(environment):
     prefix = "kopokopo_remittance_" + environment
     client_id = frappe.conf.get(prefix + "_client_id")
     client_secret = frappe.conf.get(prefix + "_client_secret")
+    if environment == "live" and not client_id and not client_secret:
+        client_id = frappe.conf.get("kopokopo_client_id")
+        client_secret = frappe.conf.get("kopokopo_client_secret")
     if not client_id or not client_secret:
-        raise ValueError("Configure separate {} remittance credentials in site_config.json.".format(environment))
+        raise ValueError("Configure a complete {} credential pair in site_config.json.".format(environment))
     return KopokopoConnector(env=environment, app_key=client_id, app_secret=client_secret)
 
 

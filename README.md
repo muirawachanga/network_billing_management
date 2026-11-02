@@ -40,21 +40,21 @@ confirmed single-recipient transfer. Mobile destinations currently support
 Safaricom M-Pesa; bank destinations require account name, number and provider
 bank branch reference. A public HTTPS site URL is required for callbacks.
 There is no automatic payout schedule or automatic retry.
-Remittance credentials are separate from the existing checkout credentials.
-Configure these site-specific keys in `sites/<site>/site_config.json`:
+Live remittances reuse the existing `kopokopo_client_id` and
+`kopokopo_client_secret` by default. Sandbox remittances require their own
+credentials. Configure these site-specific keys in `sites/<site>/site_config.json`:
 
 ```json
 {
   "kopokopo_remittance_sandbox_client_id": "<sandbox application client ID>",
-  "kopokopo_remittance_sandbox_client_secret": "<sandbox application secret>",
-  "kopokopo_remittance_live_client_id": "<live application client ID>",
-  "kopokopo_remittance_live_client_secret": "<live application secret>"
+  "kopokopo_remittance_sandbox_client_secret": "<sandbox application secret>"
 }
 ```
 
-Only configure the environment being used; missing credentials fail explicitly
-and never fall back to another environment or to checkout credentials.
-Keep existing `kopokopo_client_id` and `kopokopo_client_secret` unchanged.
+Sandbox never falls back to checkout credentials. Optionally set both
+`kopokopo_remittance_live_client_id` and `kopokopo_remittance_live_client_secret`
+to use a dedicated live payout application instead. A partial override is
+rejected rather than mixing credentials. Keep existing checkout keys unchanged.
 Restart the Frappe processes after changing site configuration. Live sending
 remains blocked regardless of whether live credentials are configured.
 Use a separate test site for sandbox testing where possible.
