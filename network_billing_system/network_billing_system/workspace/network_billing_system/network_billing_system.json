@@ -213,7 +213,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-11-01 13:31:22.000000",
+ "modified": "2026-11-02 06:53:19.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Network Billing System",
@@ -234,11 +234,13 @@
   },
   {
    "document_type": "Import Captive Code",
-   "label": "Import Captive Code"
+   "label": "Import Captive Code",
+   "quick_list_filter": "[]"
   },
   {
    "document_type": "Mpesa Transaction Log",
-   "label": "Mpesa Log"
+   "label": "Mpesa Log",
+   "quick_list_filter": "[]"
   }
  ],
  "roles": [

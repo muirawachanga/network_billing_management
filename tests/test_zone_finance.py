@@ -124,6 +124,11 @@ class TestBalances(unittest.TestCase):
         self.assertIn(chart["name"], [block["data"].get("chart_name") for block in blocks])
         self.assertIn(report["name"], [link.get("link_to") for link in workspace["links"]])
         self.assertEqual(json.loads(chart["filters_json"])["provider_environment"], "live")
+        for quick_list in workspace["quick_lists"]:
+            filters = json.loads(quick_list["quick_list_filter"])
+            self.assertIsInstance(filters, (list, dict))
+            if quick_list["document_type"] in ("Import Captive Code", "Mpesa Transaction Log"):
+                self.assertEqual(filters, [])
         for path in module_path.rglob("*.json"):
             json.loads(path.read_text())
 
