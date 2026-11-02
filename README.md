@@ -5,6 +5,40 @@ M-Pesa, and reconnecting after payment.
 
 ## Zone payment dashboard and remittances
 
+### Recipient/account registry
+
+Open **Remittance Recipients** in the MPESA workspace card before creating
+an API payout. Create an account with its nickname, zone, environment and
+account type. The supported Send Money destination categories are:
+`mobile_wallet`, `bank_account`, `till`, `paybill`, `merchant_wallet`, and
+`merchant_bank_account`. Bank accounts require the provider's branch reference;
+merchant bank accounts additionally require its settlement method. These are
+the SDK categories, not a claim of international-bank support.
+
+**Register with Kopo Kopo** creates external contacts through
+`POST /api/v2/external_recipients`, merchant wallets through
+`POST /api/v2/merchant_wallets`, and merchant bank accounts through
+`POST /api/v2/merchant_bank_accounts`. Registration is sandbox-only and uses
+the separate sandbox credentials. Registration does not send money. The
+returned provider UUID is saved; uncertain registration is not automatically
+retried. Provider approval/activation requirements still apply.
+
+Select the registered account on an API remittance. It must be enabled and
+match the zone and environment. Its destination details are copied server-side
+into the draft and preserved on submission. External Send Money destinations
+use the registered contact's details as specified by the official SDK;
+merchant destinations use the registered account's `reference`. Do not replace
+external fields with an assumed reference-only payload. Zone settings now
+include a default registered recipient; multiple recipients can share a zone.
+Registered account identities cannot be edited; disable one and create a
+replacement when account details change. Existing queued API drafts must
+select a registered recipient before they can send. Manual external
+withdrawal reconciliation remains independent of account registration.
+
+This adds account selection and all six destination payload mappings, not
+automatic fee policies or multi-destination batch settlement. Live API sending
+and live account registration remain blocked pending sandbox verification.
+
 After `bench --site <site> migrate`, open **Network Billing System → MPESA →
 Zone Payment Dashboard**. The standard Frappe Script Report includes summary
 totals, a zone comparison chart, and per-zone successful-payment counts,
@@ -59,7 +93,7 @@ Restart the Frappe processes after changing site configuration. Live sending
 remains blocked regardless of whether live credentials are configured.
 Use a separate test site for sandbox testing where possible.
 
-Each remittance supports one mobile number or bank account, but different
+Each remittance supports one registered destination of any supported type, but different
 remittance records can pay different recipients; zone recipient settings are
 defaults, not a restriction to one global recipient. Kopo Kopo's endpoint
 supports a `destinations` array for batch payouts. This first-stage ledger

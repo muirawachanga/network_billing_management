@@ -233,6 +233,7 @@ class TestRemittanceAPI(unittest.TestCase):
         self.doc = types.SimpleNamespace(
             name="remittance-1", zone="north", status="Queued", provider_transfer_id=None,
             withdrawal_method="Kopo Kopo API",
+            recipient="recipient-1",
             provider_environment="sandbox", docstatus=1, amount=20,
             source_identifier="source-1", destination_type="mobile_wallet",
             recipient_name="Test", phone_number="254712345678", network="Safaricom",
@@ -363,6 +364,8 @@ class TestRemittanceDocument(unittest.TestCase):
         self.doc = module.ZoneRemittance()
         self.doc.name = "remittance-1"
         self.doc.withdrawal_method = "Kopo Kopo API"
+        self.doc.recipient = "recipient-1"
+        self.doc.set = lambda field, value: setattr(self.doc, field, value)
         self.doc.zone = "north"
         self.doc.provider_environment = "live"
         self.doc.amount = 20
@@ -375,6 +378,13 @@ class TestRemittanceDocument(unittest.TestCase):
         self.doc.docstatus = 0
         self.doc.is_new = lambda: True
         self.doc.db_set = MagicMock()
+        recipient = MagicMock()
+        recipient.enabled = 1
+        recipient.registration_status = "Registered"
+        recipient.zone = "north"
+        recipient.provider_environment = "live"
+        recipient.get.side_effect = lambda field: getattr(self.doc, field, None)
+        self.frappe.get_doc.return_value = recipient
 
     def test_draft_cannot_supply_a_paid_status_or_provider_uuid(self):
         self.doc.status = "Paid"
@@ -383,6 +393,20 @@ class TestRemittanceDocument(unittest.TestCase):
         self.assertEqual(self.doc.status, "Draft")
         self.assertIsNone(self.doc.provider_transfer_id)
         self.assertEqual(self.doc.phone_number, "254712345678")
+
+    def test_api_remittance_requires_recipient_in_same_zone_and_environment(self):
+        self.doc.recipient = None
+        with self.assertRaisesRegex(ValueError, "registered remittance recipient"):
+            self.doc.validate()
+        self.doc.recipient = "recipient-1"
+        recipient = self.frappe.get_doc.return_value
+        recipient.zone = "other-zone"
+        with self.assertRaisesRegex(ValueError, "matching this zone"):
+            self.doc.validate()
+        recipient.zone = "north"
+        recipient.provider_environment = "sandbox"
+        with self.assertRaisesRegex(ValueError, "matching this zone"):
+            self.doc.validate()
 
     def test_submission_checks_amount_plus_allowance_and_only_queues(self):
         self.doc.before_submit()

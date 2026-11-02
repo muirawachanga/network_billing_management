@@ -1,0 +1,37 @@
+{
+ "doctype": "DocType",
+ "name": "Remittance Recipient",
+ "module": "Network Billing System",
+ "modified": "2026-11-02 07:13:26.000000",
+ "autoname": "hash",
+ "title_field": "recipient_name",
+ "track_changes": 1,
+ "engine": "InnoDB",
+ "field_order": ["recipient_name", "zone", "enabled", "provider_environment", "destination_type", "first_name", "last_name", "phone_number", "network", "account_name", "account_number", "bank_branch_ref", "settlement_method", "till_name", "till_number", "paybill_name", "paybill_number", "paybill_account_number", "provider_reference", "registration_status"],
+ "fields": [
+  {"fieldname": "recipient_name", "fieldtype": "Data", "label": "Nickname", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "zone", "fieldtype": "Link", "options": "Captive Portal Zone", "label": "Zone", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "1"},
+  {"fieldname": "provider_environment", "fieldtype": "Select", "options": "sandbox\nlive", "label": "Provider Environment", "reqd": 1},
+  {"fieldname": "destination_type", "fieldtype": "Select", "options": "mobile_wallet\nbank_account\ntill\npaybill\nmerchant_wallet\nmerchant_bank_account", "label": "Account Type", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "first_name", "fieldtype": "Data", "label": "First Name", "depends_on": "eval:['mobile_wallet','merchant_wallet'].includes(doc.destination_type)"},
+  {"fieldname": "last_name", "fieldtype": "Data", "label": "Last Name", "depends_on": "eval:['mobile_wallet','merchant_wallet'].includes(doc.destination_type)"},
+  {"fieldname": "phone_number", "fieldtype": "Data", "label": "Phone Number", "depends_on": "eval:['mobile_wallet','merchant_wallet'].includes(doc.destination_type)"},
+  {"fieldname": "network", "fieldtype": "Data", "label": "Network", "default": "Safaricom", "depends_on": "eval:['mobile_wallet','merchant_wallet'].includes(doc.destination_type)"},
+  {"fieldname": "account_name", "fieldtype": "Data", "label": "Account Name", "depends_on": "eval:['bank_account','merchant_bank_account'].includes(doc.destination_type)"},
+  {"fieldname": "account_number", "fieldtype": "Data", "label": "Account Number", "depends_on": "eval:['bank_account','merchant_bank_account'].includes(doc.destination_type)"},
+  {"fieldname": "bank_branch_ref", "fieldtype": "Data", "label": "Kopo Kopo Bank Branch Reference", "depends_on": "eval:['bank_account','merchant_bank_account'].includes(doc.destination_type)"},
+  {"fieldname": "settlement_method", "fieldtype": "Data", "label": "Provider Settlement Method", "depends_on": "eval:doc.destination_type=='merchant_bank_account'"},
+  {"fieldname": "till_name", "fieldtype": "Data", "label": "Till Name", "depends_on": "eval:doc.destination_type=='till'"},
+  {"fieldname": "till_number", "fieldtype": "Data", "label": "Till Number", "depends_on": "eval:doc.destination_type=='till'"},
+  {"fieldname": "paybill_name", "fieldtype": "Data", "label": "Paybill Name", "depends_on": "eval:doc.destination_type=='paybill'"},
+  {"fieldname": "paybill_number", "fieldtype": "Data", "label": "Paybill Number", "depends_on": "eval:doc.destination_type=='paybill'"},
+  {"fieldname": "paybill_account_number", "fieldtype": "Data", "label": "Paybill Account Number", "depends_on": "eval:doc.destination_type=='paybill'"},
+  {"fieldname": "provider_reference", "fieldtype": "Data", "label": "Registered Provider Reference", "read_only": 1, "unique": 1},
+  {"fieldname": "registration_status", "fieldtype": "Select", "options": "Draft\nRegistering\nRegistered\nUnknown", "default": "Draft", "label": "Registration Status", "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1, "report": 1},
+  {"role": "Network Administrator", "create": 1, "read": 1, "write": 1, "report": 1}
+ ]
+}

@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
 
 from network_billing_system.portal_rules import payment_id
+from network_billing_system.recipient_rules import destination_details
 
 
 def transfer_id_from_location(location, base_url):
@@ -21,15 +22,9 @@ def transfer_payload(doc, callback_url):
         "description": "Zone remittance " + doc.name,
         "favourite": False,
     }
-    if doc.destination_type == "mobile_wallet":
-        destination.update(phone_number=doc.phone_number, network=doc.network)
-    elif doc.destination_type == "bank_account":
-        destination.update(
-            account_name=doc.account_name, account_number=doc.account_number,
-            bank_branch_ref=doc.bank_branch_ref,
-        )
-    else:
-        raise ValueError("Unsupported remittance destination.")
+    destination.update(destination_details(doc))
+    if doc.destination_type in ("merchant_wallet", "merchant_bank_account"):
+        destination = {key: destination[key] for key in ("type", "reference", "amount")}
     return {
         "source_identifier": doc.source_identifier,
         "destinations": [destination],
@@ -61,7 +56,8 @@ def verified_transfer(payload, doc, expected_id):
     if not isinstance(destination, dict):
         raise ValueError("Kopo Kopo returned an invalid transfer destination.")
     expected = transfer_payload(doc, "")["destinations"][0]
-    for field in ("type", "phone_number", "network", "account_name", "account_number", "bank_branch_ref"):
+    for field in ("type", "phone_number", "network", "account_name", "account_number", "bank_branch_ref",
+                  "till_number", "paybill_number", "paybill_account_number", "reference"):
         if field in expected and str(destination.get(field)) != str(expected[field]):
             raise ValueError("The transfer recipient does not match.")
     try:

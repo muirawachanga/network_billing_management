@@ -1,8 +1,26 @@
 frappe.ui.form.on('Zone Remittance', {
+	setup(frm) {
+		frm.set_query('recipient', () => ({
+			filters: {zone: frm.doc.zone, provider_environment: frm.doc.provider_environment,
+				enabled: 1, registration_status: 'Registered'}
+		}));
+	},
+	async recipient(frm) {
+		if (!frm.doc.recipient || frm.doc.docstatus !== 0) return;
+		const recipient = await frappe.db.get_doc('Remittance Recipient', frm.doc.recipient);
+		const values = {};
+		for (const field of ['destination_type', 'recipient_name', 'phone_number', 'network',
+			'account_name', 'account_number', 'bank_branch_ref', 'till_number',
+			'paybill_number', 'paybill_account_number', 'provider_reference']) {
+			values[field] = recipient[field] || '';
+		}
+		await frm.set_value(values);
+	},
 	async zone(frm) {
 		if (!frm.doc.zone || frm.doc.docstatus !== 0) return;
 		const response = await frappe.db.get_doc('Captive Portal Zone', frm.doc.zone);
 		await frm.set_value({
+			recipient: response.default_remittance_recipient || '',
 			recipient_name: response.remittance_recipient_name || '',
 			destination_type: response.remittance_destination_type || 'mobile_wallet',
 			phone_number: response.remittance_phone_number || '',

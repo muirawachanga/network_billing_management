@@ -3,6 +3,7 @@ from frappe.model.document import Document
 
 from network_billing_system.portal_rules import normalize_phone, payment_id
 from network_billing_system.zone_finance import FINANCE_ROLES, ensure_funds, lock_zone, money
+from network_billing_system.recipient_rules import destination_details
 
 
 class ZoneRemittance(Document):
@@ -28,6 +29,19 @@ class ZoneRemittance(Document):
                 frappe.throw("Attach a private file as withdrawal evidence.")
         else:
             self.external_reference = None
+            if not self.recipient:
+                frappe.throw("Select a registered remittance recipient before sending money.")
+            recipient = frappe.get_doc("Remittance Recipient", self.recipient)
+            if (not recipient.enabled or recipient.registration_status != "Registered"
+                    or recipient.zone != self.zone
+                    or recipient.provider_environment != self.provider_environment):
+                frappe.throw("Select an enabled registered recipient matching this zone and environment.")
+            for field in (
+                "destination_type", "recipient_name", "phone_number", "network",
+                "account_name", "account_number", "bank_branch_ref", "till_number",
+                "paybill_number", "paybill_account_number", "provider_reference",
+            ):
+                self.set(field, recipient.get(field))
         if self.destination_type == "mobile_wallet":
             self.phone_number = normalize_phone(self.phone_number).lstrip("+")
             if self.network != "Safaricom":
@@ -37,8 +51,13 @@ class ZoneRemittance(Document):
                 frappe.throw("Enter the bank account name and account number.")
             if self.withdrawal_method == "Kopo Kopo API" and not self.bank_branch_ref:
                 frappe.throw("Enter the account name, account number and Kopo Kopo bank branch reference.")
+        elif self.destination_type in ("till", "paybill", "merchant_wallet", "merchant_bank_account"):
+            try:
+                destination_details(self)
+            except ValueError as exc:
+                frappe.throw(str(exc))
         else:
-            frappe.throw("Select mobile wallet or bank account.")
+            frappe.throw("Select a supported remittance destination type.")
         if not self.source_identifier or not self.recipient_name:
             frappe.throw("Enter the Kopo Kopo source identifier and recipient name.")
         if self.docstatus == 0:

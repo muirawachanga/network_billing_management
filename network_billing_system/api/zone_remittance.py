@@ -63,6 +63,13 @@ def send_remittance(remittance_id):
     doc = _lock_remittance(remittance_id)
     if doc.withdrawal_method != "Kopo Kopo API":
         frappe.throw("External withdrawals are ledger reconciliation only. No transfer can be initiated.")
+    if not doc.recipient or not frappe.db.get_value(
+        "Remittance Recipient",
+        {"name": doc.recipient, "enabled": 1, "registration_status": "Registered",
+         "zone": doc.zone, "provider_environment": doc.provider_environment},
+        "name",
+    ):
+        frappe.throw("Select an enabled registered recipient matching the remittance zone and environment.")
     if doc.provider_environment == "live":
         frappe.throw("Live remittance is not enabled in this release. Validate the payout response in sandbox first.")
     if doc.status != "Queued" or doc.provider_transfer_id:

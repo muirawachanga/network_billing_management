@@ -16,7 +16,11 @@ function form(status, provider = 'transfer-id', environment = 'sandbox') {
     ui: {form: {on: (name, value) => {handlers = value;}}},
     user: {has_role: () => true},
     utils: {escape_html: value => value},
-    db: {get_doc: async () => ({
+    db: {get_doc: async doctype => doctype === 'Remittance Recipient' ? {
+      destination_type: 'paybill', recipient_name: 'Test Paybill',
+      paybill_number: '123456', paybill_account_number: 'account-1',
+      provider_reference: 'provider-recipient-1'
+    } : ({
       remittance_recipient_name: 'Owner', remittance_destination_type: 'mobile_wallet',
       remittance_phone_number: '0712345678', remittance_source_identifier: 'source-1'
     })},
@@ -65,4 +69,15 @@ test('an external paid withdrawal has no transfer action', () => {
   page.frm.doc.withdrawal_method = 'External Withdrawal';
   page.handlers.refresh(page.frm);
   assert.equal(page.hasButton(), false);
+});
+
+test('selecting a registered paybill copies the paybill and account number', async () => {
+  const page = form('Draft');
+  page.frm.doc.docstatus = 0;
+  page.frm.doc.recipient = 'recipient-1';
+  await page.handlers.recipient(page.frm);
+  assert.equal(page.frm.doc.destination_type, 'paybill');
+  assert.equal(page.frm.doc.paybill_number, '123456');
+  assert.equal(page.frm.doc.paybill_account_number, 'account-1');
+  assert.equal(page.frm.doc.provider_reference, 'provider-recipient-1');
 });
