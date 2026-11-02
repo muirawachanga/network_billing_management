@@ -40,8 +40,8 @@ class KopokopoConnector:
         authenticate_uri = "/oauth/token"
         authenticate_url = "{0}{1}".format(self.base_url, authenticate_uri)
         data = {
-            "client_id": frappe.conf.get("kopokopo_client_id"),
-            "client_secret": frappe.conf.get("kopokopo_client_secret"),
+            "client_id": self.app_key if self.app_key is not None else frappe.conf.get("kopokopo_client_id"),
+            "client_secret": self.app_secret if self.app_secret is not None else frappe.conf.get("kopokopo_client_secret"),
             "grant_type": "client_credentials",
         }
         headers = {"Content-type": "application/json"}

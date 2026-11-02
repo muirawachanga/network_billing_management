@@ -40,8 +40,32 @@ confirmed single-recipient transfer. Mobile destinations currently support
 Safaricom M-Pesa; bank destinations require account name, number and provider
 bank branch reference. A public HTTPS site URL is required for callbacks.
 There is no automatic payout schedule or automatic retry.
-Use a separate test site with sandbox credentials; do not replace the
-credentials serving existing live checkout payments to test payouts.
+Remittance credentials are separate from the existing checkout credentials.
+Configure these site-specific keys in `sites/<site>/site_config.json`:
+
+```json
+{
+  "kopokopo_remittance_sandbox_client_id": "<sandbox application client ID>",
+  "kopokopo_remittance_sandbox_client_secret": "<sandbox application secret>",
+  "kopokopo_remittance_live_client_id": "<live application client ID>",
+  "kopokopo_remittance_live_client_secret": "<live application secret>"
+}
+```
+
+Only configure the environment being used; missing credentials fail explicitly
+and never fall back to another environment or to checkout credentials.
+Keep existing `kopokopo_client_id` and `kopokopo_client_secret` unchanged.
+Restart the Frappe processes after changing site configuration. Live sending
+remains blocked regardless of whether live credentials are configured.
+Use a separate test site for sandbox testing where possible.
+
+Each remittance supports one mobile number or bank account, but different
+remittance records can pay different recipients; zone recipient settings are
+defaults, not a restriction to one global recipient. Kopo Kopo's endpoint
+supports a `destinations` array for batch payouts. This first-stage ledger
+intentionally sends one destination per request so a partial batch cannot
+incorrectly mark an entire zone withdrawal paid. Multi-recipient batching
+and per-destination settlement are not implemented.
 
 The integration follows Kopo Kopo's official Python SDK contract:
 `POST /api/v2/send_money` with `source_identifier`, `currency`, `destinations`,

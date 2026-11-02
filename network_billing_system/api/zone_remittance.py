@@ -13,6 +13,17 @@ from network_billing_system.zone_finance import FINANCE_ROLES, ensure_funds, loc
 from network_billing_system.api.captive_portal import _request_limit
 
 
+def _connector(environment):
+    if environment not in ("live", "sandbox"):
+        raise ValueError("Select live or sandbox for remittance.")
+    prefix = "kopokopo_remittance_" + environment
+    client_id = frappe.conf.get(prefix + "_client_id")
+    client_secret = frappe.conf.get(prefix + "_client_secret")
+    if not client_id or not client_secret:
+        raise ValueError("Configure separate {} remittance credentials in site_config.json.".format(environment))
+    return KopokopoConnector(env=environment, app_key=client_id, app_secret=client_secret)
+
+
 def _lock_remittance(name):
     zone = frappe.db.get_value("Zone Remittance", name, "zone")
     lock_zone(zone)
@@ -60,7 +71,7 @@ def send_remittance(remittance_id):
         frappe.throw("A public HTTPS site URL is required for transfer callbacks.")
     payload = transfer_payload(doc, callback)
     try:
-        connector = KopokopoConnector(env=doc.provider_environment)
+        connector = _connector(doc.provider_environment)
     except (ValueError, requests.RequestException) as exc:
         frappe.db.set_value("Zone Remittance", doc.name, "last_error", str(exc))
         frappe.log_error(frappe.get_traceback(), "Zone remittance authentication: " + doc.name)
@@ -106,7 +117,7 @@ def _check(name, candidate=None):
     if candidate and doc.provider_transfer_id and candidate != doc.provider_transfer_id:
         frappe.throw("This remittance has a different transfer UUID.")
     try:
-        connector = KopokopoConnector(env=doc.provider_environment)
+        connector = _connector(doc.provider_environment)
         response = requests.get(
             connector.base_url + "/api/v2/send_money/" + payment_id(transfer_id),
             headers={"Authorization": "Bearer " + connector.authentication_token},

@@ -197,7 +197,13 @@ class TestRemittanceAPI(unittest.TestCase):
     def setUp(self):
         self.frappe = MagicMock()
         self.frappe.whitelist = lambda **kwargs: lambda function: function
-        self.frappe.conf = {"enable_zone_remittance": True}
+        self.frappe.conf = {
+            "enable_zone_remittance": True,
+            "kopokopo_remittance_sandbox_client_id": "sandbox-id",
+            "kopokopo_remittance_sandbox_client_secret": "sandbox-secret",
+            "kopokopo_remittance_live_client_id": "live-id",
+            "kopokopo_remittance_live_client_secret": "live-secret",
+        }
         self.frappe.throw.side_effect = throw
         connector_module = types.ModuleType("network_billing_system.kopokopo_integration")
         connector_module.KopokopoConnector = MagicMock()
@@ -227,6 +233,23 @@ class TestRemittanceAPI(unittest.TestCase):
             recipient_name="Test", phone_number="254712345678", network="Safaricom",
         )
         self.api._lock_remittance = MagicMock(return_value=self.doc)
+
+    def test_remittance_credentials_are_environment_specific(self):
+        for environment in ("sandbox", "live"):
+            self.api._connector(environment)
+            self.api.KopokopoConnector.assert_called_with(
+                env=environment, app_key=environment + "-id",
+                app_secret=environment + "-secret",
+            )
+
+    def test_missing_sandbox_credentials_never_fall_back_to_live_checkout_keys(self):
+        self.frappe.conf = {
+            "kopokopo_client_id": "checkout-live-id",
+            "kopokopo_client_secret": "checkout-live-secret",
+        }
+        with self.assertRaisesRegex(ValueError, "separate sandbox"):
+            self.api._connector("sandbox")
+        self.api.KopokopoConnector.assert_not_called()
 
     def test_disabled_and_unauthorized_requests_cannot_send(self):
         self.frappe.conf = {}
