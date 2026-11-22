@@ -15,6 +15,9 @@ FastTrack and keep the guest network IPv4-only.
 
 ## Start in staging
 
+Use the [Frappe field reference](README.md#frappe-field-reference) for the exact
+Desk fields, required values, and optional features.
+
 1. Run `bench --site SITE migrate` and make sure workers and the scheduler are
    running. Back up the site database and site encryption key securely. A
    missing key prevents checkout-proof verification and secret recovery.

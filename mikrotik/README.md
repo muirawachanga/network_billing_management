@@ -30,6 +30,9 @@ HotSpot servers or profiles, install HTML, or change management access.
 Bootstrap those locally with the steps below; there is no automatic router
 setup action in v1.
 
+For exact Desk field names and example values, see the
+[Frappe field reference](#frappe-field-reference).
+
 ## RouterOS setup commands
 
 Run these **one block at a time** from a trusted management connection
@@ -255,19 +258,11 @@ access before leaving Safe Mode. To close the pilot listener, run
 
 ### 5. Map the configuration in Frappe and start the sandbox pilot
 
-| Frappe setting | Example or source |
-| --- | --- |
-| Captive Portal Zone | Backend `MikroTik`; zone ID matches `config.js`; select the router configuration |
-| MikroTik Router | Zone above; API host is the router endpoint; port `8728`; Transport `Plaintext`; check **Allow Unencrypted RouterOS API** even if carried inside a tunnel |
-| Router identity and HotSpot server | Exact names from `/system identity print` and `/ip hotspot print` |
-| API user and password | Dedicated `frappe-hotspot` account; password stored in the Frappe Password field |
-| Internet Package Profile | `paid-1m-5m-v1`, upload `1000000`, download `5000000`, and the purchased duration in minutes |
-
 1. On the Frappe host, run `bench --site SITE migrate` and make sure the
    scheduler and workers are running. Configure and enable package checkout
-   with Kopo Kopo in **sandbox**.
+   with Kopo Kopo in **sandbox** using the [field reference](#frappe-field-reference).
 2. In Desk, create a disabled **Captive Portal Zone**, then a **MikroTik
-   Router** linked to that zone. Use the values above. Open the zone again,
+   Router** linked to that zone. Open the zone again,
    set its backend to **MikroTik**, select that router, and enable the zone.
    Leave **Pause New MikroTik Sales** unchecked for the sandbox test. Save
    and enable at least one matching **Internet Package Profile**.
@@ -286,6 +281,102 @@ wizard's temporary user after testing (replace `pilot-temp`):
 ```routeros
 /ip hotspot user remove [find where name="pilot-temp"]
 ```
+
+## Frappe field reference
+
+Start on a staging site. Create the **zone (disabled) → router → package**,
+configure sandbox payments, then link the router and enable the zone for testing.
+In Desk, the **Network Billing System → MikroTik** card opens the router
+and Notify settings; use Desk search for the other forms.
+
+### Captive Portal Zone
+
+| Desk field | What to enter |
+| --- | --- |
+| **Zone ID** | A unique ID, e.g. `digissiet-pilot`. Put the exact same ID in the router's `config.js` as `zoneId`. |
+| **Display Name** / **Description** | Optional labels for staff, e.g. `Digissiet Wi-Fi Pilot`. |
+| **Access Backend** | `MikroTik` for this zone. Leave existing pfSense zones unchanged. |
+| **MikroTik Router Configuration** | Link the saved **MikroTik Router** record for this same zone. Required before enabling. |
+| **Enabled** | Leave off while building the configuration. Turn on when ready for sandbox checkout. |
+| **Pause New MikroTik Sales** | Leave off for checkout tests. Enable to stop new sales and complimentary approvals without revoking already issued codes. |
+
+**Default Registered Recipient**, **Recipient Name**, **Destination Type**,
+**Mobile Number**, **Bank Account Name**, **Bank Account Number**,
+**Kopo Kopo Bank Branch Reference**, and **Kopo Kopo Source Identifier** are
+for remittances, not HotSpot setup or collecting a payment. Leave them
+unchanged unless separately configuring payouts.
+
+### MikroTik Router
+
+| Desk field | What to enter |
+| --- | --- |
+| **Configuration Revision** | A recognizable label, e.g. `Digissiet RB951 v1`. |
+| **Zone** | The zone you just saved, e.g. `digissiet-pilot`. |
+| **Expected RouterOS System Identity** | Exact identity from `/system identity print`; not the portal DNS name unless you explicitly named the router that way. |
+| **HotSpot Server** | Exact server name from `/ip hotspot print`, e.g. `hotspot1`. This is not the HotSpot server profile (`hsprof1`) or the package's user profile. |
+| **Router API Host** | Router IP or DNS name reachable **from the Frappe worker**, without a scheme, port, or path. A tunnel IP works. Do not enter the worker's egress IP here. |
+| **Router API Port** / **Router API Transport** | Normally `8729` / `TLS` with a trusted router certificate, or `8728` / `Plaintext` for the certificate-free pilot. Match the actual RouterOS service. Prefer plaintext inside an encrypted tunnel. |
+| **Allow Unencrypted RouterOS API** | Required for `Plaintext` even inside a tunnel. Leave off for `TLS`. Source-IP filtering does not encrypt direct traffic. |
+| **Dedicated API User** / **API Password** | The restricted RouterOS API account and its password in the Desk Password field. Never use the router's `admin` account or put this password in `config.js`. |
+| **Hardware and API Pilot Verified** | Leave off during setup. Required for live paid sales and complimentary grant approval; enable only after the [hardware checks](DEPLOYMENT.md#hardware-acceptance-gate). |
+| **Allow Automatic Compensation When Accounting Is Proven** | Leave off until the pilot proves reliable outage accounting. It is not needed for checkout. |
+
+The IP allowed on RouterOS is the Frappe worker's verified source address as
+seen by the router, not the value of **Router API Host**. Keep the API closed
+to HotSpot guests. Create a new router configuration revision if the endpoint,
+transport, API user, identity, or HotSpot server changes. Keep the old revision
+reachable for existing purchases. Rotate only the password in place.
+
+### Internet Package Profile
+
+| Desk field | What to enter |
+| --- | --- |
+| **Zone** | The same MikroTik zone. |
+| **Package Name** | A unique internal name, e.g. `digissiet-1-hour`. |
+| **Display Name** / **Description** | Optional customer-facing name, e.g. `1 hour`, and a short description. |
+| **Price (KES)** | The amount charged for this package, e.g. `20`. |
+| **Duration (Minutes)** | Positive whole minutes of connected access, e.g. `60` for one hour. |
+| **MikroTik HotSpot User Profile** | The exact existing RouterOS **user** profile name, e.g. `paid-1m-5m-v1`. Frappe does not create it. |
+| **MikroTik Upload (bits/s)** / **MikroTik Download (bits/s)** | Positive integers matching the profile's `rate-limit` in upload/download order. Example: `1000000` and `5000000` for `1000000/5000000`. |
+| **Available on Captive Portal** | Enable only when the price, duration, zone, and RouterOS profile are ready. Incomplete packages are not sold. |
+
+Set the user profile to `shared-users=1` and `session-timeout=0s`. Use a new
+profile version for rate changes instead of changing the profile for paid codes.
+
+### Kopo Kopo checkout and Frappe site
+
+| Setting | What to enter |
+| --- | --- |
+| **Kopokopo Mpesa Setting → Enable Package Captive Portal** | Enable on staging for checkout. This is site-wide and also disables legacy automatic voucher SMS from payment callbacks. |
+| **Env** / **STK Till Number** | Start with `sandbox` and the corresponding provider till. Switch to matching live credentials and till only after verification. |
+| **First Name** / **Last Name** / **Email** | Provider subscriber defaults. Frappe requires first and last name; enter the subscriber email if required by your provider setup. |
+| Site config: `kopokopo_client_id` / `kopokopo_client_secret` | Matching provider credentials on the Frappe host. Keep these private; they do not go on the router. |
+| Site config: `encryption_key` | Keep and back up the site's existing key. Do not replace it on an existing site to enable MikroTik. |
+| Public HTTPS and CORS | The public Frappe HTTPS site must receive the provider callback. Allow `http://wifi.digissiet.com` as the browser origin for HTTP CHAP in Frappe or its proxy. On the router, `billingOrigin` in `config.js` is the **Frappe HTTPS origin**, not the portal origin or the router IP. |
+
+Package checkout builds its own payment callback URL and uses the selected
+package's amount. **Kopo Stk Callback**, **Default Amount**, **Customer Name**,
+**Notes**, and **Allow Code Resend** are not MikroTik package-checkout inputs.
+**Kopo Webhook Callback**, **Webhook Till Number**, **Set Webhook**, and
+**Webhook Already Set** belong to the existing webhook integration. Saving the
+settings can register a webhook if requested or not already set; preserve the
+appropriate provider webhook configuration rather than replacing it with the
+package callback. Paid recovery uses the original checkout token, not SMS.
+
+### Optional: Featured ads, free codes, and outage SMS
+
+| Desk form | Fields and values |
+| --- | --- |
+| **MikroTik Banner** | Set **Zone** and **Title**, save the draft, and upload a public PNG, JPEG, or WebP in **Image** before enabling. **Image Alternative Text** describes the image. **Display Price** is optional text like `KSh 200`, not a checkout price. **Description** is optional. **Target URL** is an optional HTTPS details link; the whole tile is clickable only after sign-in. **Sort Order** is ascending; **Start Time** and **End Time** are optional and use the site's time zone. Check **Enabled** to publish and use the read-only **Preview** to review the saved banner. |
+| **MikroTik Notify Settings** (System Manager) | For free-code SMS only: enter the **Notify Platform HTTPS Origin** (no `/api` path), **Dedicated Notify Business Account** (the exact funded account ID), **Notify API Key**, and **Notify API Secret**. Then check **Enable Complimentary Access SMS**. Configure Advanta and the approved sender in Notify Platform, not here. |
+| **MikroTik Complimentary Grant** | For each handout, enter a Kenyan **Recipient Mobile Number**, **MikroTik Zone**, enabled **Package Policy** from that zone, **Connected Time (Minutes)** (1–1440, no more than the package duration), **Reason**, and **Unique Source Reference** (e.g. `campaign:launch-001`). Approve it in Desk after the hardware pilot. Approval and provisioning fields are filled by the app; follow **SMS Notification Status** for dispatch and delivery. |
+| **Kopokopo Mpesa Setting → Sms Gateway Server / Sms Api Key** | For outage replacement notifications, configure the existing authorized HTTPS SMS gateway. This is separate from Notify Platform's complimentary SMS and is not needed for paid checkout. |
+
+**Portal Checkout**, **MikroTik Issuance**, **MikroTik Grant Notification**,
+and the outage evidence and notification records are operational records,
+not initial setup forms.
+
+## Hardware pilot results
 
 ### What to share after the hardware test
 
