@@ -27,6 +27,9 @@ async function refresh_banner_preview(frm) {
 				.css({ maxWidth: "100%", maxHeight: "240px" })
 				.appendTo(wrapper);
 		}
+		if (banner.display_price) {
+			$("<p>").append($("<strong>").text(banner.display_price)).appendTo(wrapper);
+		}
 		$("<p>").text(banner.description).appendTo(wrapper);
 		if (banner.url) {
 			$("<p>").text(__("Target URL: {0}", [banner.url])).appendTo(wrapper);
@@ -57,6 +60,7 @@ frappe.ui.form.on("MikroTik Banner", {
 	},
 	title: banner_preview_hint,
 	description: banner_preview_hint,
+	display_price: banner_preview_hint,
 	image: banner_preview_hint,
 	alt: banner_preview_hint,
 	target_url: banner_preview_hint,

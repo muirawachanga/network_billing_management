@@ -19,9 +19,12 @@ h3 { margin: .5rem 0; }
 .banner-rotating .banner:not(.banner-active) { visibility: hidden; }
 .banner-active { animation: banner-in .4s ease-out both; }
 .banner div { flex: 1 1 12rem; min-width: 0; }
-.banner img { display: block; width: min(100%, 15rem); max-height: 7rem; object-fit: contain; border-radius: .65rem; }
+.banner img { display: block; width: min(100%, 18rem); max-height: 11rem; object-fit: contain; border-radius: .65rem; }
 .banner h3, .banner p { margin: 0 0 .25rem; }
-.banner a { display: inline-block; margin-top: .25rem; }
+.banner .banner-price { color: #08614e; font-weight: 750; }
+a.banner { color: inherit; text-decoration: none; }
+a.banner h3 { text-decoration: underline; }
+a.banner:focus-visible { outline-offset: -.3rem; }
 @keyframes banner-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 .portal-tabs { display: flex; flex-wrap: wrap; gap: .5rem; }
 label { display: block; margin: .75rem 0 .3rem; font-weight: 650; }

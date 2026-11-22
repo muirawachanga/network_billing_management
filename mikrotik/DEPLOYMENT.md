@@ -52,13 +52,14 @@ FastTrack and keep the guest network IPv4-only.
 
 ## Publish featured tiles from Desk
 
-Create a **MikroTik Banner** in Desk for the target zone. Set its title and
-description, upload a public banner image to the record, add meaningful alt
-text, and enter its HTTPS click-through URL. Set the display order and optional
+Create a **MikroTik Banner** in Desk for the target zone. Enter a title and
+optional **Display Price** (for example, `KSh 200`) and description. Save the
+draft, then upload a public image, add meaningful alt text, and set **Target URL**
+to the offer's HTTPS details page. Set the display order and optional
 publication dates, then enable the record. Images are public; never upload
 private content. Use the Desk preview before publishing. Guest users can see
-the tiles without clicking through; the configured links appear only on the
-post-login page. Publish two tiles to check that they slide in left to right
+the tiles without clicking through; the whole tile opens its configured URL
+on the post-login page. Publish two tiles to check that they slide in left to right
 and that tapping dots, holding, and swiping work on sign-in, recovery,
 post-login, sign-out, and error views. No new walled-garden hosts are needed.
 

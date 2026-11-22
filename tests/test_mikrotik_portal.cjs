@@ -299,7 +299,7 @@ test("bundle uses local assets and success redirects only to a safe router-suppl
 });
 
 async function featured({ connected = false, reducedMotion = false, banners = [
-  { title: "Offer", image: "/files/offer.png", url: "https://advertiser.example/" },
+  { title: "Offer", image: "/files/offer.png", url: "https://advertiser.example/", display_price: "KSh 200" },
   { title: "Invalid", image: "/files/../private.png", url: "javascript:alert(1)" },
 ] } = {}) {
   function element() {
@@ -351,7 +351,10 @@ test("one dot per featured tile tracks rotation and selects tiles; only signed-i
     assert.equal(page.shown, true);
     const [first, second] = el("banner-tiles").children;
     assert.equal(first.children[0].src, config.billingOrigin + "/files/offer.png");
-    assert.equal(first.children[1].children.some(child => child.tag === "a"), connected);
+    assert.equal(first.tag, connected ? "a" : "article");
+    assert.equal(first.href, connected ? "https://advertiser.example/" : undefined);
+    assert.equal(first.children[1].children.find(child => child.className === "banner-price").textContent, "KSh 200");
+    assert.equal(second.href, undefined);
     assert.deepEqual(second.children[0].children.map(child => child.tag), ["h3"]);
     const dots = el("banner-dots").children;
     assert.equal(dots.length, 2);

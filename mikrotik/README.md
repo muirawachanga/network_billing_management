@@ -361,8 +361,9 @@ Featured tiles appear at the top of sign-in, recovery, post-login, sign-out,
 and error views when ads are published for the zone. Multiple tiles slide
 in from left to right. Guests can hold a tile to pause, swipe to browse, or
 tap a dot to jump to a tile. Reduced motion disables automatic rotation.
-Advertiser links appear only
-on the post-login page. Keep the walled garden limited to the Frappe checkout and its
+Configure the image, display price (e.g. `KSh 200`), and HTTPS destination in
+Desk under **MikroTik Banner**. The whole tile opens the destination on the
+post-login page only. Keep the walled garden limited to the Frappe checkout and its
 public banner images; don't add the advertisers' websites to it.
 
 Run the local tests from the checkout root:

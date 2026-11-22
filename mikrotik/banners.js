@@ -95,8 +95,21 @@
       if (!Array.isArray(message)) return false;
       for (const banner of message.slice(0, 6)) {
         if (!banner || typeof banner.title !== "string") continue;
-        const tile = document.createElement("article");
+        const displayPrice = typeof banner.display_price === "string" ? banner.display_price : "";
+        let destination;
+        if (connected && typeof banner.url === "string") {
+          try {
+            const target = new URL(banner.url);
+            if (target.protocol === "https:" && !target.username && !target.password) destination = target.href;
+          } catch { /* An invalid destination does not prevent displaying the banner. */ }
+        }
+        const tile = document.createElement(destination ? "a" : "article");
         tile.className = "tile banner";
+        if (destination) {
+          tile.href = destination;
+          tile.rel = "noreferrer";
+          tile.setAttribute("aria-label", `View details: ${banner.title}${displayPrice ? ` · ${displayPrice}` : ""}`);
+        }
         const content = document.createElement("div");
         if (typeof banner.image === "string" && /^\/files\/[^\\?#]+$/.test(banner.image)) {
           const src = new URL(banner.image, config.origin);
@@ -112,22 +125,16 @@
         const heading = document.createElement("h3");
         heading.textContent = banner.title;
         content.append(heading);
+        if (displayPrice) {
+          const price = document.createElement("p");
+          price.className = "banner-price";
+          price.textContent = displayPrice;
+          content.append(price);
+        }
         if (typeof banner.description === "string" && banner.description) {
           const description = document.createElement("p");
           description.textContent = banner.description;
           content.append(description);
-        }
-        if (connected && typeof banner.url === "string") {
-          try {
-            const target = new URL(banner.url);
-            if (target.protocol === "https:" && !target.username && !target.password) {
-              const link = document.createElement("a");
-              link.href = target.href;
-              link.rel = "noreferrer";
-              link.textContent = `Visit ${banner.title}`;
-              content.append(link);
-            }
-          } catch { /* An invalid destination does not prevent displaying the banner. */ }
         }
         tile.append(content);
         tiles.append(tile);

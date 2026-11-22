@@ -4,11 +4,11 @@
  "module": "Network Billing System",
  "autoname": "hash",
  "engine": "InnoDB",
- "modified": "2026-11-22 09:15:23.000000",
+ "modified": "2026-11-22 09:58:59.000000",
  "title_field": "title",
  "make_attachments_public": 1,
  "field_order": [
-  "zone", "enabled", "sort_order", "title", "description", "image", "alt",
+  "zone", "enabled", "sort_order", "title", "description", "display_price", "image", "alt",
   "target_url", "schedule_section", "starts_at", "ends_at", "preview_section", "preview"
  ],
  "fields": [
@@ -17,6 +17,7 @@
   {"fieldname": "sort_order", "fieldtype": "Int", "label": "Sort Order", "default": "0", "description": "Smaller numbers appear first."},
   {"fieldname": "title", "fieldtype": "Data", "label": "Title", "reqd": 1, "length": 120, "in_list_view": 1},
   {"fieldname": "description", "fieldtype": "Small Text", "label": "Description", "description": "Plain text, up to 500 characters."},
+  {"fieldname": "display_price", "fieldtype": "Data", "label": "Display Price", "length": 40, "description": "Optional price shown on the banner, e.g. KSh 200. This does not affect Wi-Fi checkout."},
   {"fieldname": "image", "fieldtype": "Attach", "label": "Image", "description": "Still PNG, JPEG, or WebP. Up to 2 MiB, 1920 pixels per side, and 2,073,600 pixels total. Required to enable a banner. The file URL is public even when the banner is not scheduled to appear."},
   {"fieldname": "alt", "fieldtype": "Data", "label": "Image Alternative Text", "length": 160},
   {"fieldname": "target_url", "fieldtype": "Small Text", "label": "Target URL", "description": "Optional HTTPS destination. The pre-login portal does not display it as a link."},

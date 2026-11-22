@@ -72,6 +72,11 @@ class TestBannerRules(BannerFixture):
             with self.subTest(url=url), self.assertRaisesRegex(ValueError, "absolute HTTPS"):
                 self.banners.validate_banner(self.banner | {"target_url": url})
 
+    def test_display_price_is_optional_bounded_text(self):
+        for price in (123, "x" * 41):
+            with self.subTest(price=price), self.assertRaisesRegex(ValueError, "Display price"):
+                self.banners.validate_banner(self.banner | {"display_price": price})
+
     def test_published_checks_enabled_mikrotik_zone(self):
         for bad_zone in ("", {"name": "wifi-1"}, None):
             self.assertEqual(self.banners.published(bad_zone), [])
@@ -89,7 +94,7 @@ class TestBannerRules(BannerFixture):
         db.execute("""
             CREATE TABLE `tabMikroTik Banner` (
                 name, zone, enabled, starts_at, ends_at, sort_order,
-                title, description, image, alt, target_url
+                title, description, image, alt, target_url, display_price
             )
         """)
         yesterday = self.at - timedelta(days=1)
@@ -108,7 +113,7 @@ class TestBannerRules(BannerFixture):
             return [str(value) if isinstance(value, datetime) else value for value in row]
 
         db.executemany(
-            "INSERT INTO `tabMikroTik Banner` VALUES (?, ?, ?, ?, ?, ?, ?, '', '/files/day.png', '', '')",
+            "INSERT INTO `tabMikroTik Banner` VALUES (?, ?, ?, ?, ?, ?, ?, '', '/files/day.png', '', '', 'KSh 200')",
             [sqlite_values(row + (row[0],)) for row in rows],
         )
 
@@ -128,13 +133,16 @@ class TestBannerRules(BannerFixture):
         self.assertEqual([row["title"] for row in result], ["a-tie-break", "z-starts-now", "more-00", "more-01"])
         self.assertEqual(result[0], {
             "title": "a-tie-break", "description": "", "image": "/files/day.png", "alt": "", "url": "",
+            "display_price": "KSh 200",
         })
 
     def test_preview_uses_saved_record_and_checks_read_permission(self):
         doc = MagicMock()
-        doc.get.side_effect = self.banner.get
+        doc.get.side_effect = (self.banner | {"display_price": "  KSh 200  "}).get
         self.frappe.get_doc.return_value = doc
-        self.assertEqual(self.banners.preview("banner-1")["title"], "Today’s offer")
+        preview = self.banners.preview("banner-1")
+        self.assertEqual(preview["title"], "Today’s offer")
+        self.assertEqual(preview["display_price"], "KSh 200")
         doc.check_permission.assert_called_once_with("read")
         doc.get.reset_mock()
         doc.check_permission.side_effect = PermissionError

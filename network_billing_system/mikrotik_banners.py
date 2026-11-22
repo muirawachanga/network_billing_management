@@ -166,6 +166,7 @@ def _payload(record, require_image):
     return {
         "title": _text(record.get("title"), "Title", 120, required=True),
         "description": _text(record.get("description"), "Description", 500),
+        "display_price": _text(record.get("display_price"), "Display price", 40),
         "alt": _text(record.get("alt"), "Image alternative text", 160),
         "url": _target(record.get("target_url")),
         "image": _public_image(record) if require_image or record.get("image") else "",
@@ -198,7 +199,7 @@ def published(zone_id):
     at = now_datetime()
     candidates = frappe.db.sql(
         """
-        SELECT name, title, description, image, alt, target_url
+        SELECT name, title, description, display_price, image, alt, target_url
           FROM `tabMikroTik Banner`
          WHERE zone = %s AND enabled = 1
            AND (starts_at IS NULL OR starts_at <= %s)
