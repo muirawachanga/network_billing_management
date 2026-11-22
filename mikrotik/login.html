@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Wi-Fi sign in</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+  <main>
+    <h1>Connect to Wi-Fi</h1>
+    $(if error)
+    <p role="alert">The router did not accept the sign-in. Check your access details or try again.</p>
+    $(endif)
+    <section aria-labelledby="manual-title">
+      <h2 id="manual-title">Use an access code</h2>
+      <form id="manual" method="post" autocomplete="off">
+        <label for="voucher">Wi-Fi access code</label>
+        <input id="voucher" type="password" autocapitalize="none" spellcheck="false" required>
+        <button id="manual-submit" disabled>Connect</button>
+      </form>
+      <p id="login-message" role="status"></p>
+      <noscript><p>Enable JavaScript to sign in securely with this portal.</p></noscript>
+    </section>
+    <section aria-labelledby="payment-title">
+      <h2 id="payment-title">Buy Wi-Fi access</h2>
+      <p id="billing-message" role="status">Online payment is unavailable. You can still use an access code.</p>
+      <div id="billing" hidden>
+        <form id="purchase" method="post" autocomplete="off" aria-describedby="package-message">
+          <label for="package">Package</label>
+          <select id="package" required></select>
+          <label for="phone">M-Pesa phone number</label>
+          <input id="phone" type="tel" required>
+          <button id="pay" disabled>Send payment request</button>
+        </form>
+        <p id="package-message" role="status"></p>
+        <button id="reload-packages" type="button" hidden>Reload packages</button>
+        <button id="check" type="button" hidden>Check access status</button>
+        <button id="connect" type="button" hidden>Connect to Wi-Fi</button>
+      </div>
+    </section>
+    <section id="recovery" aria-labelledby="recovery-title" hidden>
+      <h2 id="recovery-title">Recover a payment by SMS</h2>
+      <form id="receipt-form" method="post" autocomplete="off">
+        <label for="receipt">M-Pesa receipt code</label>
+        <input id="receipt" maxlength="40" autocapitalize="characters" spellcheck="false" required>
+        <button id="send-code">Send SMS code</button>
+      </form>
+      <form id="otp-form" method="post" autocomplete="off" hidden>
+        <label for="otp">SMS verification code</label>
+        <input id="otp" type="password" inputmode="numeric" autocomplete="one-time-code" required>
+        <button id="verify-code">Verify code</button>
+      </form>
+      <p id="recovery-message" role="status"></p>
+    </section>
+    <form id="router-login" method="post" action="$(link-login-only)" autocomplete="off" hidden>
+      <input type="hidden" name="username" id="router-user">
+      <input type="hidden" name="password" id="router-password">
+      <input type="hidden" name="dst" id="router-destination" data-original="$(link-orig-esc)">
+    </form>
+  </main>
+  <script>
+    // RouterOS supplies CHAP bytes as JavaScript octal escapes. Keep this script non-strict.
+    window.hotspotChap = null;
+    $(if chap-id)
+    window.hotspotChap = { id: "$(chap-id)", challenge: "$(chap-challenge)" };
+    $(endif)
+  </script>
+  <script src="hotspot.js"></script>
+  <script src="config.js"></script>
+  <script src="portal.js"></script>
+</body>
+</html>

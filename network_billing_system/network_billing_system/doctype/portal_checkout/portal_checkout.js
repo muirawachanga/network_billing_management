@@ -30,7 +30,9 @@ frappe.ui.form.on('Portal Checkout', {
 					message: `${error}${logReference}<p>${result.access_ready
 						? __('Payment confirmed and access is ready.')
 						: result.status === 'SUCCESS'
-							? __('Payment confirmed, but access is not ready. Check voucher inventory or contact support. Do not request another payment.')
+							? (result.access_state
+								? __('Payment confirmed. MikroTik access state: {0}. Do not request another payment.', [result.access_state])
+								: __('Payment confirmed, but access is not ready. Check voucher inventory or contact support. Do not request another payment.'))
 							: __('Current payment status: {0}', [result.status])}</p>`,
 					indicator: result.error ? 'red' : result.access_ready ? 'green' : 'orange'
 				});

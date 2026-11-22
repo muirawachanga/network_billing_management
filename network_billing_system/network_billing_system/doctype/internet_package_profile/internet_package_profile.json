@@ -12,7 +12,10 @@
   "description",
   "enabled",
   "price",
-  "duration_minutes"
+  "duration_minutes",
+  "mikrotik_profile",
+  "mikrotik_upload_bps",
+  "mikrotik_download_bps"
  ],
  "fields": [
   {"fieldname": "zone", "fieldtype": "Link", "options": "Captive Portal Zone", "label": "Zone", "reqd": 1},
@@ -40,17 +43,20 @@
    "reqd": 1
   },
   {
-   "description": "Must match the duration of vouchers generated in pfSense. pfSense enforces usage and expiry.",
+   "description": "Connected-time entitlement. For pfSense it must match the imported vouchers.",
    "fieldname": "duration_minutes",
    "fieldtype": "Int",
-   "label": "Voucher Duration (Minutes)",
+   "label": "Duration (Minutes)",
    "reqd": 1
   },
   {
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
-  }
+  },
+  {"fieldname": "mikrotik_profile", "fieldtype": "Data", "label": "MikroTik HotSpot User Profile"},
+  {"fieldname": "mikrotik_upload_bps", "fieldtype": "Int", "label": "MikroTik Upload (bits/s)"},
+  {"fieldname": "mikrotik_download_bps", "fieldtype": "Int", "label": "MikroTik Download (bits/s)"}
  ],
  "index_web_pages_for_search": 1,
  "links": [],

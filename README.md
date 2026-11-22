@@ -179,6 +179,14 @@ settlement and fee scenarios before explicitly enabling **Allow Live**.
 The layout adapts to desktop and mobile screens and includes keyboard-friendly
 tabs, labelled inputs, and status messages.
 
+### MikroTik pilot
+
+MikroTik is optional per zone. Existing zones default to pfSense and keep their
+imported voucher stock, portal template, and receipt recovery. Start with the
+[RouterOS setup commands](mikrotik/README.md#routeros-setup-commands). For
+API restrictions, evidence review, and rollback, see the
+[MikroTik deployment guide](mikrotik/DEPLOYMENT.md).
+
 ## Payment checks in Desk
 
 On the **Portal Checkout** list, System Managers and Network Administrators can

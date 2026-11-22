@@ -84,17 +84,43 @@ def _zone(zone_id):
     return zone_id
 
 
+def _mikrotik_zone(zone_id):
+    return frappe.db.get_value("Captive Portal Zone", zone_id, "backend") == "MikroTik"
+
+
+def prevent_caching_checkout_proofs(response, request):
+    if request.path.rsplit("/", 1)[-1] in {
+        __name__ + ".start_payment", __name__ + ".check_payment_status",
+        __name__ + ".begin_mikrotik_recovery", __name__ + ".verify_mikrotik_recovery",
+    }:
+        response.headers["Cache-Control"] = "no-store"
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def get_packages(zone_id=None):
     _enabled()
     _request_limit("packages")
     zone_id = _zone(zone_id)
+    mikrotik = _mikrotik_zone(zone_id)
+    fields = ["name", "display_name", "description", "price", "duration_minutes"]
+    if mikrotik:
+        fields.extend(["mikrotik_profile", "mikrotik_upload_bps", "mikrotik_download_bps"])
     packages = frappe.get_all(
         "Internet Package Profile",
         filters={"enabled": 1, "zone": zone_id},
-        fields=["name", "display_name", "description", "price", "duration_minutes"],
+        fields=fields,
         order_by="price asc, name asc",
     )
+    if mikrotik:
+        from network_billing_system import mikrotik_access
+        if not mikrotik_access.sales_router(zone_id, environment=load_configuration("env")):
+            return []
+        return [{
+            "package_id": row.name, "label": row.display_name or row.name,
+            "description": row.description, "price": row.price, "currency": "KES",
+            "duration_minutes": row.duration_minutes, "available": True,
+        } for row in packages if row.price > 0 and row.duration_minutes > 0
+            and mikrotik_access.package_policy(row)]
     return [
         {
             "package_id": package.name,
@@ -132,6 +158,17 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id=
     if package.zone != zone_id or not package.enabled or flt(package.price) <= 0 or package.duration_minutes <= 0:
         frappe.throw("This package is not available.")
     environment = load_configuration("env")
+    snapshot = {}
+    if _mikrotik_zone(zone_id):
+        from network_billing_system import mikrotik_access
+        router = mikrotik_access.sales_router(zone_id, environment=environment)
+        policy = mikrotik_access.package_policy(package)
+        if not router or not policy:
+            frappe.throw("This package is not available. No payment was requested.")
+        snapshot = {
+            **policy, "backend": "MikroTik", "mikrotik_router": router.name,
+            "mikrotik_server": router.hotspot_server,
+        }
     till = str(load_configuration("till_number") or "").lstrip("K")
     if environment not in ("sandbox", "live") or not re.fullmatch(r"\d+", till):
         frappe.throw("Configure the Kopo Kopo environment and STK till number first.")
@@ -155,31 +192,34 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id=
         "provider_environment": environment,
         "till_number": till,
         "status": "PENDING",
+        **snapshot,
     }).insert(ignore_permissions=True)
     token = _token(checkout.name)
-    vouchers = frappe.db.sql(
-        """
-        select name from `tabCaptive Portal Code`
-        where package=%s and duration_minutes=%s and zone=%s and status='Active'
-          and sms_sent=0 and ifnull(portal_checkout, '')=''
-        order by creation asc, name asc limit 1 for update
-        """,
-        (package.name, package.duration_minutes, zone_id),
-        as_dict=True,
-    )
-    if not vouchers:
-        frappe.throw("This package has no available vouchers. No payment was requested.")
+    if not snapshot:
+        vouchers = frappe.db.sql(
+            """
+            select name from `tabCaptive Portal Code`
+            where package=%s and duration_minutes=%s and zone=%s and status='Active'
+              and sms_sent=0 and ifnull(portal_checkout, '')=''
+            order by creation asc, name asc limit 1 for update
+            """,
+            (package.name, package.duration_minutes, zone_id),
+            as_dict=True,
+        )
+        if not vouchers:
+            frappe.throw("This package has no available vouchers. No payment was requested.")
     try:
         connector = KopokopoConnector(env=environment)
     except (requests.RequestException, ValueError, KeyError):
         frappe.log_error(frappe.get_traceback(), "Portal payment authentication failed")
         frappe.throw("The payment service could not authenticate. No payment was requested.")
-    checkout.voucher = vouchers[0].name
-    frappe.db.set_value("Captive Portal Code", checkout.voucher, {
-        "status": "Reserved", "portal_checkout": checkout.name,
-    })
-    checkout.save(ignore_permissions=True)
-    # Persist the reservation before a payment can be accepted or a callback arrives.
+    if not snapshot:
+        checkout.voucher = vouchers[0].name
+        frappe.db.set_value("Captive Portal Code", checkout.voucher, {
+            "status": "Reserved", "portal_checkout": checkout.name,
+        })
+        checkout.save(ignore_permissions=True)
+    # Persist the checkout and any stock reservation before initiating payment.
     frappe.db.commit()
 
     callback = get_url(
@@ -207,6 +247,10 @@ def start_payment(phone, package_id, portal_action=None, redirurl=None, zone_id=
 
 
 def _prepare_paid_access(checkout):
+    if checkout.backend == "MikroTik":
+        from network_billing_system.mikrotik_access import create_issuance
+        create_issuance(checkout)
+        return
     if not checkout.voucher:
         available = frappe.db.sql(
             """
@@ -266,7 +310,7 @@ def _log_reconciliation(checkout, diagnostics, error=None):
 def _refresh(checkout, candidate_id=None, force=False, diagnostics=None):
     was_successful = checkout.status == "SUCCESS"
     if was_successful and (not force or diagnostics is None):
-        if not checkout.voucher:
+        if not checkout.voucher and checkout.backend != "MikroTik":
             _prepare_paid_access(checkout)
             checkout.save(ignore_permissions=True)
         return checkout
@@ -274,7 +318,7 @@ def _refresh(checkout, candidate_id=None, force=False, diagnostics=None):
         return checkout
     provider_id = checkout.provider_payment_id or candidate_id
     if not provider_id:
-        if was_successful and not checkout.voucher:
+        if was_successful and not checkout.voucher and checkout.backend != "MikroTik":
             _prepare_paid_access(checkout)
             checkout.save(ignore_permissions=True)
         return checkout
@@ -304,7 +348,7 @@ def _refresh(checkout, candidate_id=None, force=False, diagnostics=None):
     checkout.status = result["status"]
     if checkout.status == "SUCCESS":
         checkout.mpesa_receipt = result["receipt"]
-        checkout.confirmed_at = now_datetime()
+        checkout.confirmed_at = checkout.confirmed_at or now_datetime()
         _prepare_paid_access(checkout)
         _record_payment(checkout, result["resource"])
     elif checkout.status in ("FAILED", "CANCELLED") and checkout.voucher:
@@ -348,10 +392,14 @@ def _record_payment(checkout, resource):
     }).insert(ignore_permissions=True)
 
 
-def _access_response(checkout):
+def _access_response(checkout, reveal_mikrotik=False, recover_replacement=False):
     response = {"status": checkout.status, "access_ready": False}
     if checkout.status != "SUCCESS":
         return response
+    if checkout.backend == "MikroTik":
+        from network_billing_system.mikrotik_access import access_response
+        return access_response(checkout, response, reveal=reveal_mikrotik,
+                               recover_replacement=recover_replacement)
     if not checkout.voucher:
         response["customer_message"] = (
             "Your payment is confirmed. Access is not ready yet. "
@@ -379,26 +427,39 @@ def _access_response(checkout):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def check_payment_status(payment_token, zone_id=None):
-    _enabled()
+def check_payment_status(payment_token=None, zone_id=None, recovery_token=None):
     _request_limit("status", limit=1200)
-    zone_id = _zone(zone_id)
-    name = _checkout_for_token(payment_token)
+    verified_recovery = bool(recovery_token and not payment_token)
+    if verified_recovery:
+        from network_billing_system import mikrotik_recovery
+        name = mikrotik_recovery.checkout_for_grant(recovery_token, zone_id)
+    else:
+        name = _checkout_for_token(payment_token)
     if not name:
+        if not recovery_token:
+            _enabled()
+            _zone(zone_id)
         return {"status": "NOT_FOUND", "access_ready": False}
     checkout = _lock_checkout(name)
+    if checkout.backend != "MikroTik":
+        _enabled()
+        _zone(zone_id)
+        if recovery_token:
+            return {"status": "NOT_FOUND", "access_ready": False}
     if checkout.zone != zone_id:
         return {"status": "INELIGIBLE", "access_ready": False,
                 "customer_message": "This payment belongs to a different Wi-Fi location."}
-    return _access_response(_refresh(checkout))
+    return _access_response(_refresh(checkout), reveal_mikrotik=True,
+                            recover_replacement=verified_recovery)
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def payment_callback(checkout_id, data=None, **kwargs):
-    _enabled()
     if not frappe.db.exists("Portal Checkout", checkout_id):
         frappe.throw("Unknown checkout.")
     checkout = _lock_checkout(checkout_id)
+    if checkout.backend != "MikroTik":
+        _enabled()
     candidate_id = None
     if not checkout.provider_payment_id:
         # The callback is only a notification. Even this ID must be verified by
@@ -430,7 +491,25 @@ def connect_existing_customer(lookup_type, lookup_value, zone_id=None):
                 "wait for confirmation or contact support. Do not pay again."
             ),
         }
-    return _access_response(frappe.get_doc("Portal Checkout", name))
+    checkout = frappe.get_doc("Portal Checkout", name)
+    if checkout.backend == "MikroTik":
+        return {"status": "VERIFICATION_REQUIRED", "access_ready": False,
+                "customer_message": "Use verification by SMS or contact support. Do not pay again."}
+    return _access_response(checkout)
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def begin_mikrotik_recovery(receipt, zone_id=None):
+    from network_billing_system import mikrotik_recovery
+    _request_limit("mikrotik_recovery_start", limit=10, seconds=300)
+    return mikrotik_recovery.begin(receipt, zone_id)
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def verify_mikrotik_recovery(challenge_id, otp, zone_id=None):
+    from network_billing_system import mikrotik_recovery
+    _request_limit("mikrotik_recovery_verify", limit=30, seconds=300)
+    return mikrotik_recovery.verify(challenge_id, otp, zone_id)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -482,14 +561,19 @@ def reconcile_date_range(from_date, to_date, after_name=None):
     for row in rows[:2]:
         try:
             checkout = _lock_checkout(row.name)
-            if checkout.status == "SUCCESS" and checkout.voucher:
+            if checkout.status == "SUCCESS" and checkout.backend == "MikroTik":
+                outcome = "already_confirmed" if _access_response(checkout)["access_ready"] else "awaiting_access"
+            elif checkout.status == "SUCCESS" and checkout.voucher:
                 outcome = "already_confirmed"
             elif not checkout.provider_payment_id and checkout.status != "SUCCESS":
                 outcome = "missing_provider_id"
             else:
                 checkout = _refresh(checkout, force=True)
                 outcome = (
-                    "confirmed" if checkout.status == "SUCCESS" and checkout.voucher
+                    "confirmed" if checkout.status == "SUCCESS" and (
+                        _access_response(checkout)["access_ready"] if checkout.backend == "MikroTik"
+                        else checkout.voucher
+                    )
                     else "awaiting_access" if checkout.status == "SUCCESS"
                     else checkout.status.lower()
                 )
@@ -508,11 +592,12 @@ def reconcile_date_range(from_date, to_date, after_name=None):
 
 
 def reconcile_pending_payments():
+    filters = {"status": "PENDING", "provider_payment_id": ["is", "set"]}
     if not load_configuration("enable_package_portal"):
-        return
+        filters["backend"] = "MikroTik"
     pending = frappe.get_all(
         "Portal Checkout",
-        filters={"status": "PENDING", "provider_payment_id": ["is", "set"]},
+        filters=filters,
         order_by="last_checked_at asc, creation asc",
         limit_page_length=20,
         pluck="name",

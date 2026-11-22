@@ -9,7 +9,8 @@
  "field_order": [
   "package", "zone", "mobile_number", "amount", "currency", "duration_minutes",
   "status", "voucher", "provider_payment_id", "provider_environment",
-  "till_number", "mpesa_receipt", "confirmed_at", "last_checked_at"
+  "till_number", "mpesa_receipt", "confirmed_at", "last_checked_at",
+  "backend", "mikrotik_router", "mikrotik_server", "mikrotik_profile", "mikrotik_rate_limit"
  ],
  "fields": [
   {"fieldname": "zone", "fieldtype": "Link", "options": "Captive Portal Zone", "label": "Zone", "read_only": 1, "reqd": 1, "in_list_view": 1},
@@ -17,7 +18,12 @@
   {"fieldname": "mobile_number", "fieldtype": "Data", "label": "Mobile Number", "reqd": 1, "read_only": 1},
   {"fieldname": "amount", "fieldtype": "Currency", "label": "Amount (KES)", "reqd": 1, "read_only": 1},
   {"fieldname": "currency", "fieldtype": "Data", "label": "Currency", "default": "KES", "read_only": 1},
-  {"fieldname": "duration_minutes", "fieldtype": "Int", "label": "pfSense Duration (Minutes)", "read_only": 1},
+  {"fieldname": "duration_minutes", "fieldtype": "Int", "label": "Duration (Minutes)", "read_only": 1},
+  {"fieldname": "backend", "fieldtype": "Select", "label": "Access Backend", "options": "pfSense\nMikroTik", "default": "pfSense", "read_only": 1},
+  {"fieldname": "mikrotik_router", "fieldtype": "Link", "options": "MikroTik Router", "label": "Purchased Router Configuration", "read_only": 1, "depends_on": "eval:doc.backend=='MikroTik'"},
+  {"fieldname": "mikrotik_server", "fieldtype": "Data", "label": "Purchased HotSpot Server", "read_only": 1, "depends_on": "eval:doc.backend=='MikroTik'"},
+  {"fieldname": "mikrotik_profile", "fieldtype": "Data", "label": "Purchased HotSpot Profile", "read_only": 1, "depends_on": "eval:doc.backend=='MikroTik'"},
+  {"fieldname": "mikrotik_rate_limit", "fieldtype": "Data", "label": "Purchased Rate Limit", "read_only": 1, "depends_on": "eval:doc.backend=='MikroTik'"},
   {"fieldname": "status", "fieldtype": "Select", "label": "Payment Status", "options": "PENDING\nSUCCESS\nFAILED\nCANCELLED", "default": "PENDING", "read_only": 1, "in_list_view": 1},
   {"fieldname": "voucher", "fieldtype": "Link", "options": "Captive Portal Code", "label": "Voucher", "read_only": 1},
   {"fieldname": "provider_payment_id", "fieldtype": "Data", "label": "Kopo Kopo Payment ID", "unique": 1, "read_only": 1},

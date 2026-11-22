@@ -1,0 +1,30 @@
+{
+ "doctype":"DocType","name":"MikroTik Outage Sample","module":"Network Billing System","autoname":"hash","engine":"InnoDB",
+ "field_order":["router","incident","kind","status","observed_at","uptime_seconds","issuance","pre_incident_sample","active_at_onset","used_seconds","candidate_seconds","reviewed_by","reviewed_at","review_note","account_evidence","pre_revoke_used_seconds","final_used_seconds","credited_seconds","replacement","last_attempt_at","diagnostic","evidence_key","target_fingerprint"],
+ "fields":[
+  {"fieldname":"router","fieldtype":"Link","options":"MikroTik Router","label":"Router","reqd":1,"read_only":1,"search_index":1,"in_list_view":1},
+  {"fieldname":"incident","fieldtype":"Link","options":"MikroTik Outage Incident","label":"Incident","read_only":1,"search_index":1},
+  {"fieldname":"kind","fieldtype":"Select","options":"Health\nActivity\nAccount","label":"Kind","reqd":1,"read_only":1,"in_list_view":1},
+  {"fieldname":"status","fieldtype":"Select","options":"Reachable\nUnreachable\nActive\nIdle\nUnverified\nInsufficient Evidence\nReview\nApproved\nDeclined\nReplacing\nNeeds Review\nNo Balance\nReplaced","label":"Status","read_only":1,"search_index":1,"in_list_view":1},
+  {"fieldname":"observed_at","fieldtype":"Datetime","label":"Observed At","read_only":1,"search_index":1},
+  {"fieldname":"uptime_seconds","fieldtype":"Int","label":"Router Uptime (Seconds)","read_only":1},
+  {"fieldname":"issuance","fieldtype":"Link","options":"MikroTik Issuance","label":"Original Issuance","read_only":1,"search_index":1},
+  {"fieldname":"pre_incident_sample","fieldtype":"Link","options":"MikroTik Outage Sample","label":"Pre-incident Activity Sample","read_only":1},
+  {"fieldname":"active_at_onset","fieldtype":"Check","label":"Recent Active Session Before Incident","read_only":1,"default":"0"},
+  {"fieldname":"used_seconds","fieldtype":"Int","label":"Observed Usage (Seconds)","read_only":1},
+  {"fieldname":"candidate_seconds","fieldtype":"Int","label":"Maximum Candidate Credit (Seconds)","read_only":1},
+  {"fieldname":"reviewed_by","fieldtype":"Link","options":"User","label":"Reviewed By","read_only":1},
+  {"fieldname":"reviewed_at","fieldtype":"Datetime","label":"Reviewed At","read_only":1},
+  {"fieldname":"review_note","fieldtype":"Small Text","label":"Review Note","read_only":1},
+  {"fieldname":"account_evidence","fieldtype":"Small Text","label":"Independent Evidence of Account Activity at Onset","read_only":1},
+  {"fieldname":"pre_revoke_used_seconds","fieldtype":"Int","label":"Pre-revocation Usage (Seconds)","read_only":1},
+  {"fieldname":"final_used_seconds","fieldtype":"Int","label":"Final Usage (Seconds)","read_only":1},
+  {"fieldname":"credited_seconds","fieldtype":"Int","label":"Compensated (Seconds)","read_only":1},
+  {"fieldname":"replacement","fieldtype":"Link","options":"MikroTik Issuance","label":"Replacement","read_only":1},
+  {"fieldname":"last_attempt_at","fieldtype":"Datetime","label":"Last Replacement Attempt","read_only":1},
+  {"fieldname":"diagnostic","fieldtype":"Small Text","label":"Diagnostic","read_only":1},
+  {"fieldname":"evidence_key","fieldtype":"Data","label":"Evidence Key","unique":1,"read_only":1,"hidden":1},
+  {"fieldname":"target_fingerprint","fieldtype":"Data","label":"Target Fingerprint","read_only":1,"hidden":1}
+ ],
+ "permissions":[{"role":"System Manager","read":1,"report":1}]
+}

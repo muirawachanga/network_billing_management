@@ -1,0 +1,25 @@
+{
+ "doctype": "DocType",
+ "name": "MikroTik Recovery Challenge",
+ "module": "Network Billing System",
+ "modified": "2026-11-22 08:19:15.000000",
+ "autoname": "hash",
+ "engine": "InnoDB",
+ "field_order": [
+  "zone", "checkout", "payer_digest", "expires_at", "attempts",
+  "dispatched_at", "used_at", "grant_digest", "grant_expires_at"
+ ],
+ "fields": [
+  {"fieldname": "zone", "fieldtype": "Link", "options": "Captive Portal Zone", "label": "Zone", "reqd": 1, "read_only": 1},
+  {"fieldname": "checkout", "fieldtype": "Link", "options": "Portal Checkout", "label": "Checkout", "reqd": 1, "read_only": 1},
+  {"fieldname": "payer_digest", "fieldtype": "Data", "label": "Payer Digest", "reqd": 1, "read_only": 1},
+  {"fieldname": "expires_at", "fieldtype": "Datetime", "label": "OTP Expires At", "reqd": 1, "read_only": 1, "search_index": 1},
+  {"fieldname": "attempts", "fieldtype": "Int", "label": "Verification Attempts", "default": "0", "read_only": 1},
+  {"fieldname": "dispatched_at", "fieldtype": "Datetime", "label": "Dispatch Claimed At", "read_only": 1},
+  {"fieldname": "used_at", "fieldtype": "Datetime", "label": "OTP Consumed At", "read_only": 1},
+  {"fieldname": "grant_digest", "fieldtype": "Data", "label": "Grant Digest", "read_only": 1},
+  {"fieldname": "grant_expires_at", "fieldtype": "Datetime", "label": "Grant Expires At", "read_only": 1}
+ ],
+ "permissions": [],
+ "track_changes": 0
+}
