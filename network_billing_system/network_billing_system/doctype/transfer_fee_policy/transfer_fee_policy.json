@@ -1,0 +1,30 @@
+{
+ "doctype": "DocType",
+ "name": "Transfer Fee Policy",
+ "module": "Network Billing System",
+ "autoname": "field:policy_name",
+ "title_field": "policy_name",
+ "track_changes": 1,
+ "engine": "InnoDB",
+ "field_order": ["policy_name", "enabled", "currency", "destination_type", "settlement_method", "effective_from", "effective_to", "fee_bearer", "fixed_fee", "percentage", "minimum_fee"],
+ "fields": [
+  {"fieldname": "policy_name", "fieldtype": "Data", "label": "Policy Name", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "0"},
+  {"fieldname": "currency", "fieldtype": "Select", "label": "Currency", "options": "KES", "default": "KES", "reqd": 1},
+  {"fieldname": "destination_type", "fieldtype": "Select", "label": "Destination Type", "options": "mobile_wallet\nbank_account\ntill\npaybill\nmerchant_wallet\nmerchant_bank_account", "reqd": 1},
+  {"fieldname": "settlement_method", "fieldtype": "Select", "label": "Settlement Method", "options": "\nRTS\nEFT", "description": "Optional. External bank accounts support RTS only; merchant bank accounts support RTS or EFT.", "depends_on": "eval:['bank_account','merchant_bank_account'].includes(doc.destination_type)"},
+  {"fieldname": "effective_from", "fieldtype": "Date", "label": "Effective From", "reqd": 1},
+  {"fieldname": "effective_to", "fieldtype": "Date", "label": "Effective To", "description": "Optional inclusive end date."},
+  {"fieldname": "fee_bearer", "fieldtype": "Select", "label": "Fee Bearer", "options": "Zone\nRecipient", "default": "Zone", "reqd": 1, "description": "The caller snapshots the chosen fee bearer with the fee quote."},
+  {"fieldname": "fixed_fee", "fieldtype": "Currency", "label": "Fixed Fee (KES)", "default": "0", "precision": "2"},
+  {"fieldname": "percentage", "fieldtype": "Float", "label": "Percentage Fee", "default": "0", "precision": "6", "description": "Percentage points, e.g. 1.5 means 1.5 percent. Computed using exact decimals."},
+  {"fieldname": "minimum_fee", "fieldtype": "Currency", "label": "Minimum Fee (KES)", "default": "0", "precision": "2", "description": "Optional minimum applied after fixed plus percentage fees."}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1},
+  {"role": "Transfer Approver", "create": 1, "read": 1, "write": 1},
+  {"role": "Transfer Preparer", "read": 1},
+  {"role": "Transfer Operator", "read": 1},
+  {"role": "Transfer Reconciler", "read": 1}
+ ]
+}

@@ -7,6 +7,7 @@
  "field_order": [
   "mobile_number",
   "transaction_code",
+  "portal_checkout",
   "column_break_3",
   "time_of_payment",
   "amount_paid",
@@ -17,6 +18,13 @@
   "middle_name"
  ],
  "fields": [
+  {
+   "fieldname": "portal_checkout",
+   "fieldtype": "Link",
+   "label": "Portal Checkout",
+   "options": "Portal Checkout",
+   "read_only": 1
+  },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Data",
@@ -71,7 +79,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-01-05 08:39:41.043111",
+ "modified": "2026-10-15 18:31:19.739000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Mpesa Transaction Log",

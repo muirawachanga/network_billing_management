@@ -1,0 +1,32 @@
+{
+ "doctype":"DocType","name":"Transfer Request","module":"Network Billing System","autoname":"hash","engine":"InnoDB","is_submittable":1,"track_changes":1,
+ "modified":"2026-11-02 07:55:25.000000",
+ "field_order":["zone","provider_account","recipient_account","fee_policy","purpose","amount","fee_bearer","recipient_amount","estimated_fee","total_debit","status","snapshot","approved_by","approved_at","batch","actual_fee","fee_reconciled","schedule_key"],
+ "fields":[
+  {"fieldname":"zone","fieldtype":"Link","options":"Captive Portal Zone","label":"Zone","reqd":1,"in_list_view":1},
+  {"fieldname":"provider_account","fieldtype":"Link","options":"Transfer Provider Account","label":"Provider Account","reqd":1},
+  {"fieldname":"recipient_account","fieldtype":"Link","options":"Transfer Recipient Account","label":"Recipient Account","reqd":1},
+  {"fieldname":"fee_policy","fieldtype":"Link","options":"Transfer Fee Policy","label":"Fee Policy","reqd":1},
+  {"fieldname":"purpose","fieldtype":"Small Text","label":"Purpose","reqd":1},
+  {"fieldname":"amount","fieldtype":"Currency","label":"Requested Amount / Budget (KES)","reqd":1},
+  {"fieldname":"fee_bearer","fieldtype":"Select","options":"Zone\nRecipient","default":"Zone","label":"Fee Bearer","reqd":1},
+  {"fieldname":"recipient_amount","fieldtype":"Currency","label":"Recipient Amount (KES)","read_only":1},
+  {"fieldname":"estimated_fee","fieldtype":"Currency","label":"Estimated Fee (KES)","read_only":1},
+  {"fieldname":"total_debit","fieldtype":"Currency","label":"Total Zone Reservation (KES)","read_only":1},
+  {"fieldname":"status","fieldtype":"Select","options":"Draft\nAwaiting Approval\nApproved\nBatched\nSending\nPending\nNeeds Review\nPaid\nFailed\nCancelled","default":"Draft","label":"Status","read_only":1,"in_list_view":1},
+  {"fieldname":"snapshot","fieldtype":"Code","options":"JSON","label":"Approved Destination and Tariff Snapshot","read_only":1},
+  {"fieldname":"approved_by","fieldtype":"Link","options":"User","label":"Approved By","read_only":1},
+  {"fieldname":"approved_at","fieldtype":"Datetime","label":"Approved At","read_only":1},
+  {"fieldname":"batch","fieldtype":"Link","options":"Transfer Batch","label":"Batch","read_only":1},
+  {"fieldname":"actual_fee","fieldtype":"Currency","label":"Actual Fee (KES)","read_only":1},
+  {"fieldname":"fee_reconciled","fieldtype":"Check","label":"Fee Reconciled","read_only":1},
+  {"fieldname":"schedule_key","fieldtype":"Data","label":"Schedule Key","unique":1,"read_only":1}
+ ],
+ "permissions":[
+  {"role":"System Manager","create":1,"read":1,"write":1,"submit":1,"cancel":1,"report":1},
+  {"role":"Transfer Preparer","create":1,"read":1,"write":1,"submit":1,"cancel":1,"report":1},
+  {"role":"Transfer Approver","read":1,"report":1},
+  {"role":"Transfer Operator","read":1,"report":1},
+  {"role":"Transfer Reconciler","read":1,"report":1}
+ ]
+}

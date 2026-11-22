@@ -1,0 +1,24 @@
+{
+ "doctype": "DocType",
+ "name": "Transfer Settings",
+ "module": "Network Billing System",
+ "issingle": 1,
+ "track_changes": 1,
+ "engine": "InnoDB",
+ "field_order": ["enabled", "allow_live", "approval_threshold", "max_request_amount", "reconciliation_limit", "scheduler_enabled"],
+ "fields": [
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enable Transfers", "default": "0"},
+  {"fieldname": "allow_live", "fieldtype": "Check", "label": "Allow Live Transfers", "default": "0"},
+  {"fieldname": "approval_threshold", "fieldtype": "Currency", "label": "Approval Threshold (KES)", "default": "0", "precision": "2", "description": "Zero requires approval for every positive request."},
+  {"fieldname": "max_request_amount", "fieldtype": "Currency", "label": "Maximum Request Amount (KES)", "default": "0", "precision": "2", "description": "Set a positive limit before enabling transfers. Zero is never unlimited."},
+  {"fieldname": "reconciliation_limit", "fieldtype": "Int", "label": "Maximum Reconciliation Items per Run", "default": "100", "reqd": 1},
+  {"fieldname": "scheduler_enabled", "fieldtype": "Check", "label": "Enable Transfer Scheduler", "default": "0"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1},
+  {"role": "Transfer Preparer", "read": 1},
+  {"role": "Transfer Approver", "read": 1},
+  {"role": "Transfer Operator", "read": 1},
+  {"role": "Transfer Reconciler", "read": 1}
+ ]
+}

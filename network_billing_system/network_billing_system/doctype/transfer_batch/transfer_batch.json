@@ -1,0 +1,16 @@
+{
+ "doctype":"DocType","name":"Transfer Batch","module":"Network Billing System","autoname":"hash","engine":"InnoDB","track_changes":1,
+ "modified":"2026-11-02 07:55:25.000000",
+ "field_order":["provider_account","environment","source_identifier","total_debit","requests","status","provider_id","last_error"],
+ "fields":[
+  {"fieldname":"provider_account","fieldtype":"Link","options":"Transfer Provider Account","label":"Provider Account","reqd":1},
+  {"fieldname":"environment","fieldtype":"Select","options":"sandbox\nlive","label":"Environment","read_only":1,"in_list_view":1},
+  {"fieldname":"source_identifier","fieldtype":"Data","label":"Source Till","read_only":1},
+  {"fieldname":"total_debit","fieldtype":"Currency","label":"Total Reserved (KES)","read_only":1},
+  {"fieldname":"requests","fieldtype":"Table","options":"Transfer Batch Item","label":"Requests","reqd":1},
+  {"fieldname":"status","fieldtype":"Select","options":"Ready\nSending\nPending\nNeeds Review\nCompleted\nCancelled","label":"Status","read_only":1,"default":"Ready","in_list_view":1},
+  {"fieldname":"provider_id","fieldtype":"Data","label":"Send Money Request UUID","unique":1,"read_only":1},
+  {"fieldname":"last_error","fieldtype":"Small Text","label":"Last Error","read_only":1}
+ ],
+ "permissions":[{"role":"System Manager","read":1,"report":1},{"role":"Transfer Operator","read":1,"report":1},{"role":"Transfer Reconciler","read":1,"report":1}]
+}

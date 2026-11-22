@@ -1,0 +1,23 @@
+{
+ "doctype":"DocType","name":"Transfer Reconciliation","module":"Network Billing System","autoname":"hash","engine":"InnoDB","is_submittable":1,"track_changes":1,
+ "modified":"2026-11-02 07:55:25.000000",
+ "field_order":["provider_account","reconciliation_type","provider_reference","provider_transfer_id","occurred_at","evidence","verified","total_amount","allocations","posting_key","external_transfer_key","note"],
+ "fields":[
+  {"fieldname":"provider_account","fieldtype":"Link","options":"Transfer Provider Account","label":"Provider Account","reqd":1},
+  {"fieldname":"reconciliation_type","fieldtype":"Select","options":"External Withdrawal\nTransfer Outcome\nActual Fee\nReversal","label":"Reconciliation Type","reqd":1,"in_list_view":1},
+  {"fieldname":"provider_reference","fieldtype":"Data","label":"Statement / Transaction Reference","reqd":1},
+  {"fieldname":"provider_transfer_id","fieldtype":"Data","label":"Send Money Request UUID"},
+  {"fieldname":"occurred_at","fieldtype":"Datetime","label":"Occurred At","reqd":1},
+  {"fieldname":"evidence","fieldtype":"Attach","label":"Private Provider Evidence","reqd":1},
+  {"fieldname":"verified","fieldtype":"Check","label":"I verified the amounts and outcomes against provider records"},
+  {"fieldname":"total_amount","fieldtype":"Currency","label":"Total Amount to Allocate (KES)","reqd":1},
+  {"fieldname":"allocations","fieldtype":"Table","options":"Transfer Reconciliation Item","label":"Zone / Request Allocations","reqd":1},
+  {"fieldname":"posting_key","fieldtype":"Data","label":"Posting Key","read_only":1,"unique":1},
+  {"fieldname":"external_transfer_key","fieldtype":"Data","label":"External Transfer Deduplication Key","read_only":1,"unique":1,"hidden":1},
+  {"fieldname":"note","fieldtype":"Small Text","label":"Reconciliation Notes","reqd":1}
+ ],
+ "permissions":[
+  {"role":"System Manager","create":1,"read":1,"write":1,"submit":1,"report":1},
+  {"role":"Transfer Reconciler","create":1,"read":1,"write":1,"submit":1,"report":1}
+ ]
+}

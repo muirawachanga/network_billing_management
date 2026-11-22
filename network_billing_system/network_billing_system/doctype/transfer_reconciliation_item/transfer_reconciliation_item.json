@@ -1,0 +1,13 @@
+{
+ "doctype":"DocType","name":"Transfer Reconciliation Item","module":"Network Billing System","istable":1,
+ "field_order":["zone","transfer_request","outcome","amount","finance_entry","note"],
+ "fields":[
+  {"fieldname":"zone","fieldtype":"Link","options":"Captive Portal Zone","label":"Zone","reqd":1,"in_list_view":1},
+  {"fieldname":"transfer_request","fieldtype":"Link","options":"Transfer Request","label":"Transfer Request","in_list_view":1},
+  {"fieldname":"outcome","fieldtype":"Select","options":"\nPaid\nFailed","label":"Verified Outcome"},
+  {"fieldname":"amount","fieldtype":"Currency","label":"Allocated Amount / Actual Fee (KES)","in_list_view":1},
+  {"fieldname":"finance_entry","fieldtype":"Link","options":"Zone Finance Entry","label":"Entry to Reverse"},
+  {"fieldname":"note","fieldtype":"Small Text","label":"Allocation Note"}
+ ],
+ "permissions":[]
+}

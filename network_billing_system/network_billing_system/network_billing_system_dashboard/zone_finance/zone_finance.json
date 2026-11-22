@@ -1,0 +1,9 @@
+{
+ "doctype": "Dashboard",
+ "name": "Zone Finance",
+ "dashboard_name": "Zone Finance",
+ "module": "Network Billing System",
+ "modified": "2026-11-01 13:31:22.000000",
+ "is_standard": 1,
+ "charts": [{"chart": "Zone Payment Overview", "width": "Full"}]
+}

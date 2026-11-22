@@ -1,0 +1,12 @@
+{
+ "doctype": "Report",
+ "name": "Zone Payment Dashboard",
+ "report_name": "Zone Payment Dashboard",
+ "ref_doctype": "Zone Finance Entry",
+ "report_type": "Script Report",
+ "is_standard": "Yes",
+ "module": "Network Billing System",
+ "modified": "2026-11-02 07:55:25.000000",
+ "roles": [{"role": "System Manager"}, {"role": "Network Administrator"}, {"role":"Transfer Preparer"}, {"role":"Transfer Approver"}, {"role":"Transfer Operator"}, {"role":"Transfer Reconciler"}],
+ "disabled": 0
+}

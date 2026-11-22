@@ -1,0 +1,28 @@
+{
+ "doctype": "DocType",
+ "name": "Transfer Provider Account",
+ "module": "Network Billing System",
+ "autoname": "field:account_name",
+ "title_field": "account_name",
+ "track_changes": 1,
+ "engine": "InnoDB",
+ "field_order": ["account_name", "environment", "enabled", "source_identifier", "use_existing_live_credentials", "client_id", "client_secret", "webhook_secret"],
+ "fields": [
+  {"fieldname": "account_name", "fieldtype": "Data", "label": "Account Name", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "environment", "fieldtype": "Select", "label": "Environment", "options": "sandbox\nlive", "default": "sandbox", "reqd": 1, "in_list_view": 1, "description": "Immutable after creation. Sandbox never uses live credentials."},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enabled", "default": "0", "description": "Disabling blocks provider authentication, including transfer lookups and reconciliation. Keep referenced accounts enabled until outstanding transfers are reconciled."},
+  {"fieldname": "source_identifier", "fieldtype": "Data", "label": "Source Identifier", "description": "Optional provider funding source identifier."},
+  {"fieldname": "use_existing_live_credentials", "fieldtype": "Check", "label": "Use Existing Live Credentials", "default": "1", "permlevel": 1, "description": "Live only: allow complete live remittance or legacy live site-config credentials when account credentials are blank. Sandbox uses only sandbox credentials."},
+  {"fieldname": "client_id", "fieldtype": "Data", "label": "Client ID", "permlevel": 1, "description": "A complete explicit pair overrides site configuration."},
+  {"fieldname": "client_secret", "fieldtype": "Password", "label": "Client Secret", "permlevel": 1},
+  {"fieldname": "webhook_secret", "fieldtype": "Password", "label": "Webhook Secret", "permlevel": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "create": 1, "read": 1, "write": 1},
+  {"role": "System Manager", "permlevel": 1, "read": 1, "write": 1},
+  {"role": "Transfer Preparer", "read": 1},
+  {"role": "Transfer Approver", "read": 1},
+  {"role": "Transfer Operator", "read": 1},
+  {"role": "Transfer Reconciler", "read": 1}
+ ]
+}

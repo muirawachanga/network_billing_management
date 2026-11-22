@@ -1,0 +1,27 @@
+{
+ "doctype": "DocType", "name": "Zone Finance Entry", "module": "Network Billing System",
+ "autoname": "hash", "engine": "InnoDB", "track_changes": 1,
+ "modified": "2026-11-02 07:55:25.000000",
+ "field_order": ["zone","environment","entry_type","source_key","credit","debit","reserved","reference_doctype","reference_name","reverses","note"],
+ "fields": [
+  {"fieldname":"zone","fieldtype":"Link","options":"Captive Portal Zone","label":"Zone","reqd":1,"in_list_view":1},
+  {"fieldname":"environment","fieldtype":"Select","options":"sandbox\nlive","label":"Environment","reqd":1},
+  {"fieldname":"entry_type","fieldtype":"Select","options":"Checkout Credit\nReservation\nRelease\nWithdrawal\nFee\nReversal","label":"Entry Type","reqd":1,"in_list_view":1},
+  {"fieldname":"source_key","fieldtype":"Data","label":"Unique Posting Key","reqd":1,"unique":1},
+  {"fieldname":"credit","fieldtype":"Currency","label":"Credit (KES)","read_only":1},
+  {"fieldname":"debit","fieldtype":"Currency","label":"Debit (KES)","read_only":1,"in_list_view":1},
+  {"fieldname":"reserved","fieldtype":"Currency","label":"Reserved Delta (KES)","read_only":1},
+  {"fieldname":"reference_doctype","fieldtype":"Link","options":"DocType","label":"Reference Type"},
+  {"fieldname":"reference_name","fieldtype":"Dynamic Link","options":"reference_doctype","label":"Reference"},
+  {"fieldname":"reverses","fieldtype":"Link","options":"Zone Finance Entry","label":"Reverses Entry","unique":1},
+  {"fieldname":"note","fieldtype":"Small Text","label":"Note"}
+ ],
+ "permissions":[
+  {"role":"System Manager","read":1,"report":1},
+  {"role":"Network Administrator","read":1,"report":1},
+  {"role":"Transfer Preparer","read":1,"report":1},
+  {"role":"Transfer Approver","read":1,"report":1},
+  {"role":"Transfer Operator","read":1,"report":1},
+  {"role":"Transfer Reconciler","read":1,"report":1}
+ ]
+}
