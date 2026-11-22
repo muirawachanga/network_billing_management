@@ -58,7 +58,9 @@ text, and enter its HTTPS click-through URL. Set the display order and optional
 publication dates, then enable the record. Images are public; never upload
 private content. Use the Desk preview before publishing. Guest users can see
 the tiles without clicking through; the configured links appear only on the
-connected page. No new walled-garden hosts are needed.
+post-login page. Publish two tiles to check that they slide in left to right
+and that Previous, Next, and Pause work on sign-in, recovery, post-login,
+sign-out, and error views. No new walled-garden hosts are needed.
 
 ## Send complimentary Wi-Fi codes
 
@@ -131,8 +133,9 @@ Keep live sales off until these checks pass on the target router:
   issuance and one RouterOS user. Inject a worker crash/transport loss after
   adding the RouterOS user and verify that retry confirms the same user,
   without changing its counters. Check that receipt alone does not return
-  a code. Test recovery with a pasted M-Pesa message, including a wrong
-  receipt and a new tab without the original checkout token.
+  a code. Use **Recover a payment** on the sign-in page to test a pasted
+  M-Pesa message, including a wrong receipt and a new browser tab without
+  the original checkout token.
 
 ## Operations and rollback
 

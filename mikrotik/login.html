@@ -9,15 +9,23 @@
 </head>
 <body>
   <main>
-    <header class="hero">
-      <p class="eyebrow">HOTSPOT</p>
-      <h1>Connect to Wi-Fi</h1>
-      <p>Buy access, use an existing code, or recover a payment.</p>
-    </header>
+    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
+      <h2 id="banner-title">Featured</h2>
+      <div id="banner-tiles" class="banner-track"></div>
+      <div id="banner-controls" class="banner-controls" hidden>
+        <button id="banner-prev" type="button" aria-label="Previous featured tile">Previous</button>
+        <button id="banner-next" type="button" aria-label="Next featured tile">Next</button>
+        <button id="banner-pause" type="button">Pause rotation</button>
+      </div>
+    </section>
+    <div id="portal-tabs" class="portal-tabs" role="tablist" aria-label="Wi-Fi access" hidden>
+      <button id="access-tab" type="button" role="tab" aria-selected="true" aria-controls="access-panel">Wi-Fi access</button>
+      <button id="recovery-tab" type="button" role="tab" aria-selected="false" aria-controls="recovery" tabindex="-1">Recover a payment</button>
+    </div>
     $(if error)
     <p role="alert">The router did not accept the sign-in. Check your access details or try again.</p>
     $(endif)
-    <div class="tiles">
+    <div id="access-panel" class="tiles" role="tabpanel" aria-labelledby="access-tab">
     <section class="tile" aria-labelledby="manual-title">
       <span class="tile-label">ALREADY HAVE ACCESS?</span>
       <h2 id="manual-title">Use an access code</h2>
@@ -50,21 +58,19 @@
         <button id="connect" type="button" hidden>Connect to Wi-Fi</button>
       </div>
     </section>
-    <section id="recovery" class="tile" aria-labelledby="recovery-title" hidden>
+    </div>
+    <section id="recovery" class="tile" role="tabpanel" aria-labelledby="recovery-tab" hidden>
       <span class="tile-label">ALREADY PAID?</span>
       <h2 id="recovery-title">Recover a payment</h2>
       <p id="recovery-help">Use the same tab you paid in. If you no longer have it, contact support.</p>
-      <form id="receipt-form" method="post" autocomplete="off" aria-describedby="recovery-help">
+      <form id="receipt-form" method="post" autocomplete="off" aria-describedby="recovery-help" hidden>
         <label for="receipt">Paste your M-Pesa message or enter the receipt code</label>
         <textarea id="receipt" rows="3" maxlength="2000" autocapitalize="characters" spellcheck="false" required></textarea>
         <button id="recover-payment">Recover access</button>
       </form>
+      <button id="recovery-check" type="button" hidden>Check recovery status</button>
+      <button id="recovery-connect" type="button" hidden>Connect to Wi-Fi</button>
       <p id="recovery-message" role="status"></p>
-    </section>
-    </div>
-    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
-      <h2 id="banner-title">Featured</h2>
-      <div id="banner-tiles" class="tiles"></div>
     </section>
     <form id="router-login" method="post" action="$(link-login-only)" autocomplete="off" hidden>
       <input type="hidden" name="username" id="router-user">

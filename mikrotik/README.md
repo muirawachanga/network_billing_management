@@ -140,9 +140,9 @@ is unsupported; CHAP does not encrypt the portal page itself.
    current `html-directory` for your server profile. In WinBox **Files**,
    download that folder to your computer as a backup. Make a local copy
    named `hotspot-mikrotik`.
-2. From the repository's `mikrotik/` directory, copy **only these eight
+2. From the repository's `mikrotik/` directory, copy **only these nine
    files** into `hotspot-mikrotik`, replacing matching files:
-   `login.html`, `alogin.html`, `error.html`, `config.js`, `hotspot.js`,
+   `login.html`, `alogin.html`, `error.html`, `logout.html`, `config.js`, `hotspot.js`,
    `portal.js`, `banners.js`, and `portal.css`. Keep the router's other generated files,
    including `redirect.html`, `rlogin.html`, and `status.html`. Do not
    upload Markdown docs, the `pfsense/` folder, or Frappe code.
@@ -347,8 +347,9 @@ automatically repeat router login. If a prompt was sent but no token was
 returned, the portal blocks a duplicate purchase in that tab; contact
 support before starting a new purchase.
 
-For paid recovery, paste the M-Pesa confirmation message or enter its
-receipt in the original checkout tab. Only the extracted receipt and the
+For paid recovery, select **Recover a payment** on the Wi-Fi sign-in page.
+Paste the M-Pesa confirmation message or enter its receipt in the same
+browser tab where you started checkout. Only the extracted receipt and the
 checkout token go to Frappe, not the SMS body. Frappe matches the verified
 payment and reconnects the customer when access is ready. No SMS
 verification is sent; without the original tab, contact staff.
@@ -356,8 +357,11 @@ verification is sent; without the original tab, contact staff.
 Available Wi-Fi packages appear as selectable tiles with prices; the first
 available package is selected by default.
 
-Featured tiles are informational on the login page and clickable after
-sign-in. Keep the walled garden limited to the Frappe checkout and its
+Featured tiles appear at the top of sign-in, recovery, post-login, sign-out,
+and error views when ads are published for the zone. Multiple tiles slide
+in from left to right; guests can pause or browse them manually, and reduced
+motion disables automatic rotation by default. Advertiser links appear only
+on the post-login page. Keep the walled garden limited to the Frappe checkout and its
 public banner images; don't add the advertisers' websites to it.
 
 Run the local tests from the checkout root:

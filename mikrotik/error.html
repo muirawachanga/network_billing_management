@@ -9,12 +9,21 @@
 </head>
 <body>
   <main>
-    <header class="hero">
-      <p class="eyebrow">HOTSPOT</p>
-      <h1>Wi-Fi sign-in could not finish</h1>
-    </header>
+    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
+      <h2 id="banner-title">Featured</h2>
+      <div id="banner-tiles" class="banner-track"></div>
+      <div id="banner-controls" class="banner-controls" hidden>
+        <button id="banner-prev" type="button" aria-label="Previous featured tile">Previous</button>
+        <button id="banner-next" type="button" aria-label="Next featured tile">Next</button>
+        <button id="banner-pause" type="button">Pause rotation</button>
+      </div>
+    </section>
+    <h1>Wi-Fi sign-in could not finish</h1>
     <p>Return to sign-in to check an existing payment or use an access code. Don't pay again for the same purchase.</p>
     <p><a href="/login">Return to Wi-Fi sign-in</a></p>
   </main>
+  <script src="config.js"></script>
+  <script src="banners.js"></script>
+  <script>window.HotspotBanners?.preview();</script>
 </body>
 </html>

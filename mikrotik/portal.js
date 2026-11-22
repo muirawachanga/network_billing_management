@@ -8,13 +8,34 @@
     return handler();
   });
   const message = (id, value) => { get(id).textContent = value; };
+  const tabs = [get("access-tab"), get("recovery-tab")];
+  const panels = [get("access-panel"), get("recovery")];
+  function selectTab(index) {
+    tabs.forEach((tab, i) => {
+      tab.setAttribute("aria-selected", String(i === index));
+      tab.tabIndex = i === index ? 0 : -1;
+      panels[i].hidden = i !== index;
+    });
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener("click", () => selectTab(i));
+    tab.addEventListener("keydown", event => {
+      const next = { ArrowLeft: 1 - i, ArrowRight: 1 - i, Home: 0, End: 1 }[event.key];
+      if (next === undefined) return;
+      event.preventDefault();
+      selectTab(next);
+      tabs[next].focus();
+    });
+  });
+  selectTab(0);
+  get("portal-tabs").hidden = false;
   let autoConnect = false; // Reloads resume checking, but never automatically repeat router login.
-  function logIn(credentials) {
+  function logIn(credentials, messageId = "login-message") {
     try {
       Hotspot.submitLogin(credentials);
-      message("login-message", "Signing in to Wi-Fi…");
+      message(messageId, "Signing in to Wi-Fi…");
     } catch {
-      message("login-message", "The router sign-in could not start. Reopen the Wi-Fi login page and try again.");
+      message(messageId, "The router sign-in could not start. Reopen the Wi-Fi login page and try again.");
     }
   }
   if (window.Hotspot) {
@@ -38,8 +59,11 @@
     return null;
   }
   const config = configuration(window.mikrotikPortalConfig);
-  if (config) window.HotspotBanners?.render(config, false);
-  if (!config || !window.Hotspot) return;
+  window.HotspotBanners?.preview();
+  if (!config || !window.Hotspot) {
+    message("recovery-message", "Online recovery is unavailable. Use an existing access code or contact support.");
+    return;
+  }
   const storageKey = JSON.stringify(["mikrotik-checkout", config.origin, config.zone]);
   const usableToken = value => typeof value === "string" && value.trim().length > 0;
   let checkout = null;
@@ -87,6 +111,7 @@
   let selectedPackage = null;
   let recoveryReceipt = null;
   let credentials = null;
+  let recoveryReady = false;
   let pollTimer;
   let pollUntil = 0;
   const billing = text => message("billing-message", text);
@@ -116,6 +141,10 @@
     get("connect").disabled = busy;
     get("reload-packages").disabled = busy;
     get("recover-payment").disabled = busy;
+    get("recovery-check").hidden = !recoveryReceipt;
+    get("recovery-check").disabled = busy;
+    get("recovery-connect").hidden = !recoveryReady;
+    get("recovery-connect").disabled = busy;
     get("billing-loader").hidden = !busy && !pollTimer;
   }
 
@@ -181,11 +210,11 @@
   }
 
   function pollAgain(text) {
-    if (Date.now() < pollUntil) {
-      schedulePoll();
-      billing(text);
-    } else {
-      billing(text + " Use Check access status to try again. Do not pay again.");
+    const polling = Date.now() < pollUntil;
+    if (polling) schedulePoll();
+    billing(text + (polling ? "" : " Use Check access status to try again. Do not pay again."));
+    if (recoveryReceipt) {
+      recovery(text + (polling ? " Do not pay again." : " Use Check recovery status to try again. Do not pay again."));
     }
   }
 
@@ -205,6 +234,7 @@
     const fields = statusFields();
     if (!fields) return;
     credentials = null;
+    recoveryReady = false;
     try {
       const recovering = !!recoveryReceipt;
       const result = recovering
@@ -216,16 +246,17 @@
           if (!credentials) {
             autoConnect = false;
             billing("The service did not return a usable access code. Check access status or contact support. Do not pay again.");
+            if (recovering) recovery("The service did not return a usable access code. Check recovery status or contact support.");
             return;
           }
           billing("Wi-Fi access is ready.");
+          recoveryReady = recovering;
           if (recovering) recovery("Payment matched. Wi-Fi access is ready.");
           recoveryReceipt = null;
-          if (autoConnect) logIn(credentials);
+          if (autoConnect) logIn(credentials, recovering ? "recovery-message" : "login-message");
           autoConnect = false;
           return;
         case "PROVISIONING":
-          if (recovering) recovery("Payment matched. Preparing Wi-Fi access. Do not pay again.");
           pollAgain("Payment confirmed. Wi-Fi access is being prepared.");
           return;
         case "EXPIRED":
@@ -233,12 +264,17 @@
           stopStatus("This Wi-Fi access has expired.", true);
           return;
         case "REPLACED":
+          if (recovering) recovery("This access code was replaced. Contact support if you cannot use your replacement code.");
           stopStatus("This access code was replaced. Recover your payment here or contact support.");
+          return;
+        case "REPLACING":
+          pollAgain("Your access is being replaced.");
           return;
       }
       switch (result?.status) {
         case "FAILED":
         case "CANCELLED":
+          if (recovering) recovery("This payment did not complete.");
           stopStatus("This payment did not complete.", true);
           return;
         case "NOT_FOUND":
@@ -253,7 +289,6 @@
           pollAgain("We could not confirm Wi-Fi access yet.");
       }
     } catch {
-      if (recoveryReceipt) recovery("The recovery service could not be reached. Check access status to retry.");
       pollAgain("The status service could not be reached.");
     }
   }
@@ -298,8 +333,12 @@
 
   listen("reload-packages", "click", () => run(loadPackages));
   listen("check", "click", () => run(startPolling));
+  listen("recovery-check", "click", () => run(startPolling));
   listen("connect", "click", () => { if (!busy && credentials) logIn(credentials); });
-  get("billing").hidden = get("recovery").hidden = false;
+  listen("recovery-connect", "click", () => {
+    if (!busy && recoveryReady && credentials) logIn(credentials, "recovery-message");
+  });
+  get("billing").hidden = get("receipt-form").hidden = false;
   billing(checkout ? "" : "Loading Wi-Fi packages…");
   void run(async () => {
     if (checkout?.paymentToken) {

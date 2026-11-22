@@ -32,6 +32,7 @@ function portal({
       attributes: {},
       setAttribute(name, value) { this.attributes[name] = value; },
       addEventListener(type, handler) { this.listeners[type] = handler; },
+      focus() { this.focused = true; },
       append(...children) { this.children.push(...children); },
       replaceChildren() { this.children = []; },
     };
@@ -85,7 +86,7 @@ function portal({
   for (const file of ["hotspot.js", "portal.js"]) vm.runInContext(read(file), context);
   return {
     el, requests, submissions, redirects, storage, timers,
-    send: (id, type = "submit") => el(id).listeners[type]({ preventDefault() {} }),
+    send: (id, type = "submit", event = {}) => el(id).listeners[type]({ preventDefault() {}, ...event }),
     settled: () => new Promise(resolve => setImmediate(resolve)),
     tick: () => {
       const [id, timer] = [...timers].find(([, timer]) => timer.delay === 5000);
@@ -229,16 +230,32 @@ test("pasted payment recovery submits only the receipt and original checkout tok
     JSON.stringify(["mikrotik-checkout", config.billingOrigin, config.zoneId]),
     JSON.stringify({ paymentToken: "original-token" }),
   ]]);
-  const page = portal({ storage, responses: {
-    recover_mikrotik_payment: ready,
+  const responses = {
+    recover_mikrotik_payment: { access_state: "PROVISIONING" },
     check_payment_status: ready,
-  } });
+  };
+  const page = portal({ storage, responses });
   await page.settled();
+  assert.equal(page.el("recovery").hidden, true);
+  page.send("access-tab", "keydown", { key: "ArrowRight" });
+  assert.equal(page.el("recovery-tab").attributes["aria-selected"], "true");
+  assert.equal(page.el("recovery-tab").focused, true);
+  assert.equal(page.el("recovery").hidden, false);
+  assert.equal(page.el("access-panel").hidden, true);
   page.el("receipt").value = "ABC123DEF Confirmed. Ksh30.00 sent. Phone 0700000000.";
   await page.send("receipt-form");
   assert.deepEqual(page.requests.slice(1).map(request => [request.method, request.fields]), [
     ["recover_mikrotik_payment", { receipt: "ABC123DEF", payment_token: "original-token", zone_id: "test-zone" }],
   ]);
+  assert.match(page.el("recovery-message").textContent, /being prepared/);
+  assert.equal(page.el("recovery-check").hidden, false);
+  assert.equal(page.submissions.length, 0);
+  responses.recover_mikrotik_payment = ready;
+  await page.send("recovery-check", "click");
+  assert.equal(page.el("recovery-connect").hidden, false);
+  page.send("access-tab", "click");
+  assert.equal(page.el("recovery").hidden, true);
+  assert.equal(page.el("access-panel").hidden, false);
   for (const { url, method, options } of page.requests) {
     assert.equal(url, `${config.billingOrigin}/api/method/network_billing_system.api.captive_portal.${method}`);
     assert.equal(options.method, "POST");
@@ -263,7 +280,7 @@ test("ambiguous receipts and missing checkout proof never call paid recovery", a
 });
 
 test("bundle uses local assets and success redirects only to a safe router-supplied web destination", () => {
-  for (const file of ["login.html", "error.html", "alogin.html"]) {
+  for (const file of ["login.html", "error.html", "alogin.html", "logout.html"]) {
     for (const [, asset] of read(file).matchAll(/(?:src|href)="([^"]+)"/g)) {
       assert.doesNotMatch(asset, /^(?:[a-z]+:|\/\/)/i);
       if (!asset.startsWith("/")) assert.ok(read(asset).length);
@@ -281,21 +298,32 @@ test("bundle uses local assets and success redirects only to a safe router-suppl
   assert.match(read("error.html"), /href="\/login"/);
 });
 
-test("banner tiles only link after sign-in; checkout remains the asset origin", async () => {
+test("featured tiles rotate, can be paused, and only link after sign-in", async () => {
   function element() {
+    const classes = new Set();
     return {
       children: [],
+      listeners: {},
+      classList: { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name) },
       append(child) { this.children.push(child); },
-      addEventListener() {},
+      addEventListener(type, listener) { this.listeners[type] = listener; },
+      matches: () => false,
     };
   }
   for (const connected of [false, true]) {
-    const section = element();
-    const tiles = element();
+    const elements = new Map();
+    const el = id => {
+      if (!elements.has(id)) elements.set(id, element());
+      return elements.get(id);
+    };
+    let tick;
     const context = vm.createContext({
       URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
+      setInterval: callback => { tick = callback; },
+      clearInterval: () => { tick = undefined; },
+      matchMedia: () => ({ matches: connected }),
       document: {
-        getElementById: id => id === "portal-banners" ? section : tiles,
+        getElementById: el,
         createElement: tag => Object.assign(element(), { tag }),
       },
       fetch: async () => ({
@@ -309,8 +337,23 @@ test("banner tiles only link after sign-in; checkout remains the asset origin", 
     context.window = context;
     vm.runInContext(read("banners.js"), context);
     assert.equal(await context.HotspotBanners.render({ origin: config.billingOrigin, zone: config.zoneId }, connected), true);
-    assert.equal(tiles.children[0].children[0].src, config.billingOrigin + "/files/offer.png");
-    assert.equal(tiles.children[0].children.some(child => child.tag === "a"), connected);
-    assert.deepEqual(tiles.children[1].children.map(child => child.tag), ["h3"]);
+    const [first, second] = el("banner-tiles").children;
+    assert.equal(first.children[0].src, config.billingOrigin + "/files/offer.png");
+    assert.equal(first.children[1].children.some(child => child.tag === "a"), connected);
+    assert.deepEqual(second.children[0].children.map(child => child.tag), ["h3"]);
+    assert.equal(first.classList.contains("banner-active"), true);
+    assert.equal(el("banner-controls").hidden, false);
+    if (connected) {
+      assert.equal(tick, undefined); // Reduced motion still permits manual browsing.
+      el("banner-next").listeners.click();
+    } else {
+      tick();
+      el("banner-pause").listeners.click();
+      assert.equal(tick, undefined);
+    }
+    assert.equal(second.classList.contains("banner-active"), true);
+    assert.equal(first.classList.contains("banner-active"), false);
+    el("banner-prev").listeners.click();
+    assert.equal(first.classList.contains("banner-active"), true);
   }
 });
