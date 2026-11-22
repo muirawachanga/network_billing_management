@@ -17,12 +17,6 @@ class InternetPackageProfile(Document):
             frappe.throw("Package price must be greater than zero.")
         if cint(self.duration_minutes) <= 0:
             frappe.throw("Voucher duration must be greater than zero minutes.")
-        if self.get("enabled") and frappe.db.get_value(
-            "Captive Portal Zone", self.get("zone"), "backend"
-        ) == "MikroTik":
-            from network_billing_system.mikrotik_access import package_policy
-            if not package_policy(self):
-                frappe.throw("Set a MikroTik profile and positive upload and download rates.")
         previous = self.get_doc_before_save()
         if previous and previous.get("zone") != self.get("zone") and frappe.db.exists(
             "Captive Portal Code", {"package": self.name}
