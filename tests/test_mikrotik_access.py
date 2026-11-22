@@ -48,6 +48,7 @@ class MikroTikAccessTest(unittest.TestCase):
                              username="nb-test", duration_seconds=300)
         issuance.get_password.return_value = "test-password"
         issuance.predecessor = None
+        issuance.complimentary_grant = None
         self.access.lock_issuance = MagicMock(return_value=issuance)
         self.access.policy_for = MagicMock(return_value={})
         client = MagicMock()

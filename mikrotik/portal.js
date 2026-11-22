@@ -38,6 +38,7 @@
     return null;
   }
   const config = configuration(window.mikrotikPortalConfig);
+  if (config) window.HotspotBanners?.render(config, false);
   if (!config || !window.Hotspot) return;
   const storageKey = JSON.stringify(["mikrotik-checkout", config.origin, config.zone]);
   const usableToken = value => typeof value === "string" && value.trim().length > 0;
@@ -83,26 +84,33 @@
 
   let busy = false;
   let packages = new Set();
-  let challenge = null;
-  let recoveryToken = null;
+  let recoveryReceipt = null;
   let credentials = null;
   let pollTimer;
   let pollUntil = 0;
   const billing = text => message("billing-message", text);
   const recovery = text => message("recovery-message", text);
-  const statusFields = () => recoveryToken ? { recovery_token: recoveryToken }
-    : checkout?.paymentToken ? { payment_token: checkout.paymentToken } : null;
+  const statusFields = () => checkout?.paymentToken ? { payment_token: checkout.paymentToken } : null;
+
+  function receiptFrom(input) {
+    if (input.length > 2000) return null;
+    const text = input.trim().toUpperCase();
+    const valid = value => /^(?=.*[A-Z])[A-Z0-9]{8,20}$/.test(value);
+    if (valid(text)) return text;
+    const matches = Array.from(text.matchAll(/\b([A-Z0-9]{8,20})[.\s]+CONFIRMED\b/g),
+      match => match[1]);
+    return matches.length === 1 && valid(matches[0]) ? matches[0] : null;
+  }
 
   function update() {
-    get("pay").disabled = busy || !!checkout || !!recoveryToken || !packages.has(get("package").value);
+    get("pay").disabled = busy || !!checkout || !packages.has(get("package").value);
     get("check").hidden = !statusFields();
     get("check").disabled = busy;
     get("connect").hidden = !credentials;
     get("connect").disabled = busy;
     get("reload-packages").disabled = busy;
-    get("send-code").disabled = busy;
-    get("otp-form").hidden = !challenge;
-    get("verify-code").disabled = busy;
+    get("recover-payment").disabled = busy;
+    get("billing-loader").hidden = !busy && !pollTimer;
   }
 
   async function run(action) {
@@ -145,7 +153,10 @@
   }
 
   function schedulePoll() {
-    pollTimer = setTimeout(() => busy ? schedulePoll() : run(checkStatus), 5000);
+    pollTimer = setTimeout(() => {
+      pollTimer = null;
+      return busy ? schedulePoll() : run(checkStatus);
+    }, 5000);
   }
 
   function pollAgain(text) {
@@ -159,8 +170,8 @@
 
   function stopStatus(text, allowNewPayment = false) {
     autoConnect = false;
-    if (recoveryToken) recoveryToken = null;
-    else if (allowNewPayment) {
+    recoveryReceipt = null;
+    if (allowNewPayment) {
       saveCheckout(null);
       get("reload-packages").hidden = packages.size > 0;
     }
@@ -169,11 +180,15 @@
 
   async function checkStatus() {
     clearTimeout(pollTimer);
+    pollTimer = null;
     const fields = statusFields();
     if (!fields) return;
     credentials = null;
     try {
-      const result = await post("check_payment_status", fields);
+      const recovering = !!recoveryReceipt;
+      const result = recovering
+        ? await post("recover_mikrotik_payment", { ...fields, receipt: recoveryReceipt })
+        : await post("check_payment_status", fields);
       switch (result?.access_state) {
         case "READY":
           credentials = result.access_ready === true ? Hotspot.splitVoucher(result.voucher) : null;
@@ -183,17 +198,21 @@
             return;
           }
           billing("Wi-Fi access is ready.");
+          if (recovering) recovery("Payment matched. Wi-Fi access is ready.");
+          recoveryReceipt = null;
           if (autoConnect) logIn(credentials);
           autoConnect = false;
           return;
         case "PROVISIONING":
+          if (recovering) recovery("Payment matched. Preparing Wi-Fi access. Do not pay again.");
           pollAgain("Payment confirmed. Wi-Fi access is being prepared.");
           return;
         case "EXPIRED":
+          if (recovering) recovery("This Wi-Fi access has expired.");
           stopStatus("This Wi-Fi access has expired.", true);
           return;
         case "REPLACED":
-          stopStatus("This access code was replaced. Use SMS recovery to find current access.");
+          stopStatus("This access code was replaced. Recover your payment here or contact support.");
           return;
       }
       switch (result?.status) {
@@ -203,7 +222,8 @@
           return;
         case "NOT_FOUND":
         case "INELIGIBLE":
-          stopStatus("This payment could not be used here. Try SMS recovery or contact support before paying again.");
+          if (recovering) recovery("We could not match this receipt to your original payment in this tab. Check the receipt or contact support.");
+          stopStatus("Access was not confirmed. Do not pay again until you have checked your payment.");
           return;
         case "PENDING":
           pollAgain("Waiting for payment confirmation. Approve the M-Pesa prompt on your phone.");
@@ -212,6 +232,7 @@
           pollAgain("We could not confirm Wi-Fi access yet.");
       }
     } catch {
+      if (recoveryReceipt) recovery("The recovery service could not be reached. Check access status to retry.");
       pollAgain("The status service could not be reached.");
     }
   }
@@ -221,11 +242,11 @@
     return checkStatus();
   }
 
-  const uncertain = "We could not confirm the payment request. If you received a prompt or receipt, use SMS recovery or contact support before paying again.";
+  const uncertain = "We could not confirm the payment request. If you received a prompt or receipt, contact support before paying again.";
   submit("purchase", () => run(async () => {
     const packageId = get("package").value;
     const phone = get("phone").value.trim();
-    if (checkout || recoveryToken || !phone || !packages.has(packageId)) return;
+    if (checkout || !phone || !packages.has(packageId)) return;
     // A timeout or reload during STK initiation must not silently enable another purchase.
     saveCheckout({ paymentToken: null });
     get("phone").value = "";
@@ -242,36 +263,16 @@
   }));
 
   submit("receipt-form", () => run(async () => {
-    const receipt = get("receipt").value.replace(/\s+/g, "").toUpperCase();
-    if (!receipt) return;
-    get("receipt").value = get("otp").value = "";
-    challenge = recoveryToken = credentials = null;
-    autoConnect = false;
-    try {
-      const result = await post("begin_mikrotik_recovery", { receipt });
-      if (!usableToken(result?.challenge_id)) throw new Error("Missing challenge");
-      challenge = result.challenge_id;
-      recovery("If the receipt is eligible, an SMS code will be sent to the payment phone.");
-    } catch {
-      recovery("Could not request a verification code. Try again later.");
+    const receipt = receiptFrom(get("receipt").value);
+    if (!receipt) return recovery("Enter one receipt code or paste one M-Pesa confirmation message.");
+    get("receipt").value = "";
+    if (!checkout?.paymentToken) {
+      return recovery("The original checkout is not available in this tab. Contact support; do not pay again.");
     }
-  }));
-
-  submit("otp-form", () => run(async () => {
-    const otp = get("otp").value.trim();
-    if (!challenge || !otp) return;
-    get("otp").value = "";
-    try {
-      const result = await post("verify_mikrotik_recovery", { challenge_id: challenge, otp });
-      if (!usableToken(result?.recovery_token)) throw new Error("Missing recovery token");
-      challenge = null;
-      recoveryToken = result.recovery_token;
-      recovery("SMS code verified.");
-      autoConnect = true;
-      await startPolling();
-    } catch {
-      recovery("The code could not be verified. Try again or request another SMS.");
-    }
+    recoveryReceipt = receipt;
+    recovery("Checking your payment…");
+    autoConnect = true;
+    await startPolling();
   }));
 
   listen("package", "change", update);
@@ -279,12 +280,15 @@
   listen("check", "click", () => run(startPolling));
   listen("connect", "click", () => { if (!busy && credentials) logIn(credentials); });
   get("billing").hidden = get("recovery").hidden = false;
-  billing("");
+  billing(checkout ? "" : "Loading Wi-Fi packages…");
   void run(async () => {
     if (checkout?.paymentToken) {
       await startPolling();
       if (!checkout) await loadPackages();
     } else if (checkout) billing(uncertain);
-    else await loadPackages();
+    else {
+      await loadPackages();
+      billing("");
+    }
   });
 })();

@@ -91,7 +91,7 @@ def _mikrotik_zone(zone_id):
 def prevent_caching_checkout_proofs(response, request):
     if request.path.rsplit("/", 1)[-1] in {
         __name__ + ".start_payment", __name__ + ".check_payment_status",
-        __name__ + ".begin_mikrotik_recovery", __name__ + ".verify_mikrotik_recovery",
+        __name__ + ".recover_mikrotik_payment",
     }:
         response.headers["Cache-Control"] = "no-store"
 
@@ -429,28 +429,21 @@ def _access_response(checkout, reveal_mikrotik=False, recover_replacement=False)
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def check_payment_status(payment_token=None, zone_id=None, recovery_token=None):
     _request_limit("status", limit=1200)
-    verified_recovery = bool(recovery_token and not payment_token)
-    if verified_recovery:
-        from network_billing_system import mikrotik_recovery
-        name = mikrotik_recovery.checkout_for_grant(recovery_token, zone_id)
-    else:
-        name = _checkout_for_token(payment_token)
+    if recovery_token:
+        return {"status": "NOT_FOUND", "access_ready": False}
+    name = _checkout_for_token(payment_token)
     if not name:
-        if not recovery_token:
-            _enabled()
-            _zone(zone_id)
+        _enabled()
+        _zone(zone_id)
         return {"status": "NOT_FOUND", "access_ready": False}
     checkout = _lock_checkout(name)
     if checkout.backend != "MikroTik":
         _enabled()
         _zone(zone_id)
-        if recovery_token:
-            return {"status": "NOT_FOUND", "access_ready": False}
     if checkout.zone != zone_id:
         return {"status": "INELIGIBLE", "access_ready": False,
                 "customer_message": "This payment belongs to a different Wi-Fi location."}
-    return _access_response(_refresh(checkout), reveal_mikrotik=True,
-                            recover_replacement=verified_recovery)
+    return _access_response(_refresh(checkout), reveal_mikrotik=True)
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -483,33 +476,45 @@ def connect_existing_customer(lookup_type, lookup_value, zone_id=None):
     name = frappe.db.get_value("Portal Checkout", {
         "mpesa_receipt": receipt, "status": "SUCCESS", "zone": zone_id,
     }, "name")
+    if name:
+        checkout = frappe.get_doc("Portal Checkout", name)
+        if checkout.backend != "MikroTik":
+            return _access_response(checkout)
+    return {
+        "status": "NOT_FOUND", "access_ready": False,
+        "customer_message": (
+            "No confirmed package checkout matches this receipt. If you just paid, "
+            "wait for confirmation or contact support. Do not pay again."
+        ),
+    }
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def recover_mikrotik_payment(receipt, payment_token=None, zone_id=None):
+    _request_limit("mikrotik_receipt", limit=30, seconds=300)
+    unavailable = {"status": "INELIGIBLE", "access_ready": False}
+    if (not payment_token or not isinstance(receipt, str)
+            or not re.fullmatch(r"(?=.*[A-Z])[A-Z0-9]{8,20}", receipt)):
+        return unavailable
+    try:
+        name = _checkout_for_token(payment_token)
+    except frappe.PermissionError:
+        return unavailable
     if not name:
-        return {
-            "status": "NOT_FOUND", "access_ready": False,
-            "customer_message": (
-                "No confirmed package checkout matches this receipt. If you just paid, "
-                "wait for confirmation or contact support. Do not pay again."
-            ),
-        }
-    checkout = frappe.get_doc("Portal Checkout", name)
-    if checkout.backend == "MikroTik":
-        return {"status": "VERIFICATION_REQUIRED", "access_ready": False,
-                "customer_message": "Use verification by SMS or contact support. Do not pay again."}
-    return _access_response(checkout)
+        return unavailable
+    checkout = _lock_checkout(name)
+    if (checkout.zone != zone_id or checkout.backend != "MikroTik"
+            or checkout.status != "SUCCESS" or checkout.mpesa_receipt != receipt):
+        return unavailable
+    return _access_response(checkout, reveal_mikrotik=True, recover_replacement=True)
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def begin_mikrotik_recovery(receipt, zone_id=None):
-    from network_billing_system import mikrotik_recovery
-    _request_limit("mikrotik_recovery_start", limit=10, seconds=300)
-    return mikrotik_recovery.begin(receipt, zone_id)
-
-
-@frappe.whitelist(allow_guest=True, methods=["POST"])
-def verify_mikrotik_recovery(challenge_id, otp, zone_id=None):
-    from network_billing_system import mikrotik_recovery
-    _request_limit("mikrotik_recovery_verify", limit=30, seconds=300)
-    return mikrotik_recovery.verify(challenge_id, otp, zone_id)
+def get_mikrotik_banners(zone_id=None):
+    from network_billing_system.mikrotik_banners import published
+    _request_limit("mikrotik_banners")
+    zone_id = _zone(zone_id)
+    return published(zone_id) if _mikrotik_zone(zone_id) else []
 
 
 @frappe.whitelist(methods=["POST"])

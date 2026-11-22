@@ -179,7 +179,8 @@ def _capture(candidate):
         return
     incident = frappe.get_doc(INCIDENT, incident_name, for_update=True)
     issuance = frappe.get_doc(ISSUANCE, issuance_name)
-    if issuance.state != "Ready" or frappe.db.exists(SAMPLE, {"incident": incident.name, "issuance": issuance.name}):
+    if (not issuance.checkout or issuance.state != "Ready"
+            or frappe.db.exists(SAMPLE, {"incident": incident.name, "issuance": issuance.name})):
         return
     status = "Insufficient Evidence"
     reason = "Possible reboot, changed router, or missing baseline; accounting continuity is unverified."
@@ -298,7 +299,7 @@ def _eligible(issuance, evidence, reference, client, owner):
 
 def _reserve(evidence):
     issuance = access.lock_issuance(evidence.issuance)
-    if not issuance or not _lock(SAMPLE, evidence.name):
+    if not issuance or not issuance.checkout or not _lock(SAMPLE, evidence.name):
         return False
     evidence = frappe.get_doc(SAMPLE, evidence.name, for_update=True)
     if evidence.status == "Replacing":
@@ -454,7 +455,8 @@ def run_monitoring():
             """SELECT e.name, i.name FROM `tabMikroTik Outage Incident` e
                INNER JOIN `tabMikroTik Issuance` i ON i.router=e.router AND i.creation<=e.started_at
                LEFT JOIN `tabMikroTik Outage Sample` s ON s.issuance=i.name AND s.incident=e.name
-               WHERE e.status='Restored' AND e.restored_at >= %s AND i.state='Ready' AND s.name IS NULL
+               WHERE e.status='Restored' AND e.restored_at >= %s AND i.state='Ready'
+                 AND COALESCE(i.checkout, '') <> '' AND s.name IS NULL
                ORDER BY e.restored_at, i.creation, i.name LIMIT %s""",
             (now_datetime() - CAPTURE_WINDOW, BATCH_SIZE),
         ),

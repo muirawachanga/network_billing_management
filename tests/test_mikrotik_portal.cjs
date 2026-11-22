@@ -173,7 +173,7 @@ test("unconfirmed checkout cannot be duplicated after reload", async () => {
   await reload.settled();
   assert.equal(reload.el("pay").disabled, true);
   assert.equal(reload.requests.length, 0);
-  assert.match(reload.el("billing-message").textContent, /SMS recovery/);
+  assert.match(reload.el("billing-message").textContent, /contact support/);
 });
 
 test("a resumed pending checkout can load packages once its access expires", async () => {
@@ -212,22 +212,20 @@ test("expired, replaced, and malformed READY responses do not submit stale acces
   }
 });
 
-test("SMS recovery uses a scoped alternative token and sends secrets only in POST bodies", async () => {
-  const page = portal({ responses: {
-    begin_mikrotik_recovery: { challenge_id: "challenge-1" },
-    verify_mikrotik_recovery: { recovery_token: "recovery-2" },
+test("pasted payment recovery submits only the receipt and original checkout token", async () => {
+  const storage = new Map([[
+    JSON.stringify(["mikrotik-checkout", config.billingOrigin, config.zoneId]),
+    JSON.stringify({ paymentToken: "original-token" }),
+  ]]);
+  const page = portal({ storage, responses: {
+    recover_mikrotik_payment: ready,
     check_payment_status: ready,
   } });
   await page.settled();
-  page.el("receipt").value = "  abc123def ";
+  page.el("receipt").value = "ABC123DEF Confirmed. Ksh30.00 sent. Phone 0700000000.";
   await page.send("receipt-form");
-  assert.equal(page.el("otp-form").hidden, false);
-  page.el("otp").value = "000123";
-  await page.send("otp-form");
   assert.deepEqual(page.requests.slice(1).map(request => [request.method, request.fields]), [
-    ["begin_mikrotik_recovery", { receipt: "ABC123DEF", zone_id: "test-zone" }],
-    ["verify_mikrotik_recovery", { challenge_id: "challenge-1", otp: "000123", zone_id: "test-zone" }],
-    ["check_payment_status", { recovery_token: "recovery-2", zone_id: "test-zone" }],
+    ["recover_mikrotik_payment", { receipt: "ABC123DEF", payment_token: "original-token", zone_id: "test-zone" }],
   ]);
   for (const { url, method, options } of page.requests) {
     assert.equal(url, `${config.billingOrigin}/api/method/network_billing_system.api.captive_portal.${method}`);
@@ -236,9 +234,20 @@ test("SMS recovery uses a scoped alternative token and sends secrets only in POS
     assert.equal(options.redirect, "error");
   }
   assert.equal(page.el("receipt").value, "");
-  assert.equal(page.el("otp").value, "");
-  assert.equal(page.storage.size, 0);
+  assert.equal(page.storage.size, 1);
   assert.equal(page.submissions[0].password, digest("Pass.2"));
+});
+
+test("ambiguous receipts and missing checkout proof never call paid recovery", async () => {
+  const page = portal();
+  await page.settled();
+  page.el("receipt").value = "ABC123DEF Confirmed. DEF123ABC Confirmed.";
+  await page.send("receipt-form");
+  assert.match(page.el("recovery-message").textContent, /one receipt/);
+  page.el("receipt").value = "abc123def";
+  await page.send("receipt-form");
+  assert.match(page.el("recovery-message").textContent, /Contact support/);
+  assert.deepEqual(page.requests.map(request => request.method), ["get_packages"]);
 });
 
 test("bundle uses local assets and success redirects only to a safe router-supplied web destination", () => {
@@ -258,4 +267,38 @@ test("bundle uses local assets and success redirects only to a safe router-suppl
   assert.deepEqual(page.redirects, ["https://example.org/landing?foo=bar"]);
   assert.match(read("alogin.html"), /href="\/status"/);
   assert.match(read("error.html"), /href="\/login"/);
+});
+
+test("banner tiles only link after sign-in; checkout remains the asset origin", async () => {
+  function element() {
+    return {
+      children: [],
+      append(child) { this.children.push(child); },
+      addEventListener() {},
+    };
+  }
+  for (const connected of [false, true]) {
+    const section = element();
+    const tiles = element();
+    const context = vm.createContext({
+      URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
+      document: {
+        getElementById: id => id === "portal-banners" ? section : tiles,
+        createElement: tag => Object.assign(element(), { tag }),
+      },
+      fetch: async () => ({
+        ok: true,
+        json: async () => ({ message: [
+          { title: "Offer", image: "/files/offer.png", url: "https://advertiser.example/" },
+          { title: "Invalid", image: "/files/../private.png", url: "javascript:alert(1)" },
+        ] }),
+      }),
+    });
+    context.window = context;
+    vm.runInContext(read("banners.js"), context);
+    assert.equal(await context.HotspotBanners.render({ origin: config.billingOrigin, zone: config.zoneId }, connected), true);
+    assert.equal(tiles.children[0].children[0].src, config.billingOrigin + "/files/offer.png");
+    assert.equal(tiles.children[0].children.some(child => child.tag === "a"), connected);
+    assert.deepEqual(tiles.children[1].children.map(child => child.tag), ["h3"]);
+  }
 });

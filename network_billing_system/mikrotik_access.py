@@ -1,4 +1,4 @@
-"""Durable MikroTik entitlements; RouterOS writes only run after payment commit."""
+"""Durable MikroTik entitlements; RouterOS writes run after the entitlement commits."""
 
 import hashlib
 import re
@@ -12,6 +12,7 @@ from frappe.utils import now_datetime
 
 ISSUANCE = "MikroTik Issuance"
 ROUTER = "MikroTik Router"
+GRANT = "MikroTik Complimentary Grant"
 
 
 def package_policy(package):
@@ -53,6 +54,16 @@ def policy_for_router(router):
 
 
 def policy_for(issuance):
+    if issuance.get("complimentary_grant"):
+        grant = frappe.get_doc(GRANT, issuance.complimentary_grant)
+        if (issuance.checkout or issuance.predecessor or grant.status != "Approved"
+                or grant.issuance != issuance.name or grant.router != issuance.router
+                or grant.duration_minutes * 60 != issuance.duration_seconds):
+            frappe.throw("Issuance does not match the approved complimentary grant.")
+        policy = policy_for_router(frappe.get_doc(ROUTER, issuance.router))
+        policy.update(server=grant.hotspot_server, profile=grant.hotspot_profile,
+                      rate_limit=grant.hotspot_rate_limit)
+        return policy
     checkout = frappe.get_doc("Portal Checkout", issuance.checkout)
     if checkout.backend != "MikroTik" or checkout.mikrotik_router != issuance.router:
         frappe.throw("Issuance does not match the purchased router.")
@@ -78,6 +89,23 @@ def create_issuance(checkout, seconds=None, predecessor=None, incident=None):
     if not 0 < seconds <= total or bool(predecessor) != bool(incident):
         frappe.throw("Invalid connected-time entitlement.")
     key = "replacement:" + predecessor if predecessor else _initial_key(checkout.name)
+    return _create_issuance(
+        key, checkout.mikrotik_router, seconds, checkout=checkout.name,
+        predecessor=predecessor, incident=incident,
+    )
+
+
+def create_grant_issuance(grant):
+    """Called only by approval, while the grant row is locked."""
+    if grant.status != "Approved" or not grant.router:
+        frappe.throw("An approved complimentary grant is required.")
+    return _create_issuance(
+        "complimentary:" + grant.name, grant.router, grant.duration_minutes * 60,
+        complimentary_grant=grant.name,
+    )
+
+
+def _create_issuance(key, router, seconds, **source):
     existing = frappe.db.get_value(ISSUANCE, {"issuance_key": key}, "name")
     if existing:
         return frappe.get_doc(ISSUANCE, existing)
@@ -85,10 +113,10 @@ def create_issuance(checkout, seconds=None, predecessor=None, incident=None):
     password = secrets.token_urlsafe(18)
     fingerprint = hashlib.sha256(f"{username}.{password}".encode()).hexdigest()
     doc = frappe.get_doc({
-        "doctype": ISSUANCE, "checkout": checkout.name, "router": checkout.mikrotik_router,
+        "doctype": ISSUANCE, "router": router, **source,
         "state": "Pending", "duration_seconds": seconds, "username": username,
         "password": password, "fingerprint": fingerprint, "issuance_key": key,
-        "predecessor": predecessor, "incident": incident, "next_attempt_at": now_datetime(),
+        "next_attempt_at": now_datetime(),
     }).insert(ignore_permissions=True)
     frappe.db.after_commit.add(partial(_enqueue_provision, doc.name))
     return doc
@@ -132,6 +160,9 @@ def provision(issuance_name):
     if issuance.predecessor:
         from network_billing_system.mikrotik_outages import queue_notification
         issuance.state = "Ready"
+        queue_notification(issuance)
+    elif issuance.complimentary_grant:
+        from network_billing_system.mikrotik_grants import queue_notification
         queue_notification(issuance)
     frappe.db.set_value(ISSUANCE, issuance.name, {
         "state": "Ready", "last_failure": None, "next_attempt_at": None,

@@ -229,6 +229,29 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.assertNotIn("voucher", result)
         self.api._access_response.assert_not_called()
 
+    def test_mikrotik_recovery_requires_same_verified_checkout_receipt_and_zone(self):
+        self.checkout.update(backend="MikroTik", status="SUCCESS", mpesa_receipt="ABC123DEF")
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        self.api._access_response = MagicMock(return_value={"access_ready": True})
+        proof = self.api._token("checkout-1")
+        for receipt, token, zone in [
+            ("ABC123DEF", None, "default"),
+            ("ABC123DEF", proof + "X", "default"),
+            ("WRONG12345", proof, "default"),
+            ("ABC123DEF", proof, "south"),
+        ]:
+            result = self.api.recover_mikrotik_payment(receipt, token, zone)
+            self.assertFalse(result["access_ready"])
+        self.api._access_response.assert_not_called()
+        result = self.api.recover_mikrotik_payment("ABC123DEF", proof, "default")
+        self.assertTrue(result["access_ready"])
+        self.api._access_response.assert_called_once_with(
+            self.checkout, reveal_mikrotik=True, recover_replacement=True,
+        )
+        self.assertFalse(self.api.check_payment_status(
+            recovery_token="retired", zone_id="default",
+        )["access_ready"])
+
     def test_failed_payment_releases_only_its_reserved_voucher(self):
         with patch.object(self.api, "confirmed_payment", return_value={"status": "FAILED"}):
             self.api._refresh(self.checkout)

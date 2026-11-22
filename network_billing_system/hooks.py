@@ -121,6 +121,7 @@ scheduler_events = {
             "network_billing_system.mikrotik_access.run_provisioning",
             "network_billing_system.mikrotik_outages.run_monitoring",
             "network_billing_system.mikrotik_outages.run_notifications",
+            "network_billing_system.mikrotik_grants.run_notifications",
         ],
         "*/5 * * * *": ["network_billing_system.transfer_tasks.run"]
     },

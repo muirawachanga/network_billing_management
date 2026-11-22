@@ -1,5 +1,18 @@
 # MikroTik v1 deployment
 
+## RB951Ui-2HnD port layout
+
+| Ports | Network | Expected client behavior |
+| --- | --- | --- |
+| `ether1`, `ether2` | Independent WAN uplinks (preferred and backup for the pilot) | Both can carry outbound traffic when active; the management API needs a separately verified inbound path |
+| `ether3` | `bridge-guest`, `192.168.20.1/22` (`192.168.20.0/22`) | Guests get DHCP from the router and sign in at `wifi.digissiet.com` before general internet access |
+| `ether4`, `ether5` | Separate trusted LAN bridge (e.g. `192.168.88.0/24` if unused) | LAN clients get DHCP and internet without HotSpot login; use these ports for local management |
+
+Never bridge either WAN or `ether3` into the trusted LAN. Configure routing
+and NAT for both local networks over the active WAN, and block guest access
+to the trusted LAN and management services. Keep HotSpot traffic out of
+FastTrack and keep the guest network IPv4-only.
+
 ## Start in staging
 
 1. Run `bench --site SITE migrate` and make sure workers and the scheduler are
@@ -29,12 +42,39 @@
    endpoint, identity or server changes; keep the historical revision and
    profiles reachable while users still depend on them. Rotate the API
    password on the existing revision when only the secret changes.
-4. Configure the existing Kopo Kopo checkout in sandbox first. Point the SMS
-   configuration at an HTTPS gateway authorized to message the recorded payer.
+4. Configure the existing Kopo Kopo checkout in sandbox first. If using outage
+   replacements, point the existing SMS configuration at an HTTPS gateway
+   authorized to message the recorded payer.
    Make sure SMS gateway logs do not capture request bodies. Gateway HTTP
    acceptance is not proof of delivery. The app uses a stable idempotency
    key: confirm whether your gateway honors it. A retry can resend the same
    notification, but does not mint a new code or award additional time.
+
+## Publish featured tiles from Desk
+
+Create a **MikroTik Banner** in Desk for the target zone. Set its title and
+description, upload a public banner image to the record, add meaningful alt
+text, and enter its HTTPS click-through URL. Set the display order and optional
+publication dates, then enable the record. Images are public; never upload
+private content. Use the Desk preview before publishing. Guest users can see
+the tiles without clicking through; the configured links appear only on the
+connected page. No new walled-garden hosts are needed.
+
+## Send complimentary Wi-Fi codes
+
+In **MikroTik Notify Settings**, configure the Notify Platform HTTPS origin,
+dedicated business account, API key and secret, then enable complimentary
+SMS. Configure Advanta and the approved sender in Notify Platform, not on
+the router. Give the service user access only to the dedicated Notify account
+and ensure the account is funded. Dispatch records may contain the SMS text:
+restrict access and follow your retention policy.
+
+Create a **MikroTik Complimentary Grant** for the recipient and select a
+zone, package policy and duration. Record the reason and source reference
+and approve from Desk with the authorized role. Frappe provisions the code
+on RouterOS before authorizing the SMS. Check **MikroTik Grant Notification**
+for submission and delivery status; queued or accepted does not mean
+delivered. Complimentary grants do not create payment or remittance records.
 
 ## Restrict the RouterOS API
 
@@ -67,6 +107,11 @@ unnecessary access. Leave the zone paused if the restrictions cannot be met.
 
 Keep live sales off until these checks pass on the target router:
 
+- Plug a test device into `ether3` and verify it gets a `192.168.20.0/22`
+  lease with gateway `192.168.20.1` and reaches the portal, but cannot
+  reach the trusted LAN. On `ether4` and `ether5`, verify DHCP and internet
+  without a portal prompt. Test both networks on each WAN, including
+  failover, and check API reachability separately on the intended WAN.
 - Test local code entry, automatic login after a confirmed sandbox payment,
   a wrong-code error, and the post-login destination in actual captive
   browsers. Stop Frappe and confirm a previously provisioned code still
@@ -86,7 +131,8 @@ Keep live sales off until these checks pass on the target router:
   issuance and one RouterOS user. Inject a worker crash/transport loss after
   adding the RouterOS user and verify that retry confirms the same user,
   without changing its counters. Check that receipt alone does not return
-  a code and that an SMS challenge can be used only once.
+  a code. Test recovery with a pasted M-Pesa message, including a wrong
+  receipt and a new tab without the original checkout token.
 
 ## Operations and rollback
 
@@ -95,9 +141,10 @@ pending and growing attempts, **MikroTik Outage Incident** records requiring
 evidence, and **MikroTik Notification Outbox** retries. Alert on repeated
 RouterOS API failures and outbox failures. Confirm endpoint and policy, and
 let the scheduler retry; don't restart checkout or change an issuance's
-duration. A customer can recover paid access by verifying the recorded
-payer phone. When Frappe is down, customers use their already-issued codes
-locally; new payments and SMS recovery wait for Frappe to return.
+duration. A customer can recover paid access with the verified receipt and
+the original checkout tab. If the token is gone, refer them to staff. No
+SMS verification is sent. When Frappe is down, customers use their already-issued codes
+locally; new payments and receipt recovery wait for Frappe to return.
 
 An API outage alone does not prove a Wi-Fi outage or power cut. Review
 reachability, uptime, session, and cumulative-usage evidence. Record

@@ -9,11 +9,17 @@
 </head>
 <body>
   <main>
-    <h1>Connect to Wi-Fi</h1>
+    <header class="hero">
+      <p class="eyebrow">HOTSPOT</p>
+      <h1>Connect to Wi-Fi</h1>
+      <p>Buy access, use an existing code, or recover a payment.</p>
+    </header>
     $(if error)
     <p role="alert">The router did not accept the sign-in. Check your access details or try again.</p>
     $(endif)
-    <section aria-labelledby="manual-title">
+    <div class="tiles">
+    <section class="tile" aria-labelledby="manual-title">
+      <span class="tile-label">ALREADY HAVE ACCESS?</span>
       <h2 id="manual-title">Use an access code</h2>
       <form id="manual" method="post" autocomplete="off">
         <label for="voucher">Wi-Fi access code</label>
@@ -23,9 +29,11 @@
       <p id="login-message" role="status"></p>
       <noscript><p>Enable JavaScript to sign in securely with this portal.</p></noscript>
     </section>
-    <section aria-labelledby="payment-title">
+    <section class="tile payment-tile" aria-labelledby="payment-title">
+      <span class="tile-label">GET ONLINE</span>
       <h2 id="payment-title">Buy Wi-Fi access</h2>
       <p id="billing-message" role="status">Online payment is unavailable. You can still use an access code.</p>
+      <div id="billing-loader" class="loader" aria-hidden="true" hidden><span></span></div>
       <div id="billing" hidden>
         <form id="purchase" method="post" autocomplete="off" aria-describedby="package-message">
           <label for="package">Package</label>
@@ -40,19 +48,21 @@
         <button id="connect" type="button" hidden>Connect to Wi-Fi</button>
       </div>
     </section>
-    <section id="recovery" aria-labelledby="recovery-title" hidden>
-      <h2 id="recovery-title">Recover a payment by SMS</h2>
-      <form id="receipt-form" method="post" autocomplete="off">
-        <label for="receipt">M-Pesa receipt code</label>
-        <input id="receipt" maxlength="40" autocapitalize="characters" spellcheck="false" required>
-        <button id="send-code">Send SMS code</button>
-      </form>
-      <form id="otp-form" method="post" autocomplete="off" hidden>
-        <label for="otp">SMS verification code</label>
-        <input id="otp" type="password" inputmode="numeric" autocomplete="one-time-code" required>
-        <button id="verify-code">Verify code</button>
+    <section id="recovery" class="tile" aria-labelledby="recovery-title" hidden>
+      <span class="tile-label">ALREADY PAID?</span>
+      <h2 id="recovery-title">Recover a payment</h2>
+      <p id="recovery-help">Use the same tab you paid in. If you no longer have it, contact support.</p>
+      <form id="receipt-form" method="post" autocomplete="off" aria-describedby="recovery-help">
+        <label for="receipt">Paste your M-Pesa message or enter the receipt code</label>
+        <textarea id="receipt" rows="3" maxlength="2000" autocapitalize="characters" spellcheck="false" required></textarea>
+        <button id="recover-payment">Recover access</button>
       </form>
       <p id="recovery-message" role="status"></p>
+    </section>
+    </div>
+    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
+      <h2 id="banner-title">Featured</h2>
+      <div id="banner-tiles" class="tiles"></div>
     </section>
     <form id="router-login" method="post" action="$(link-login-only)" autocomplete="off" hidden>
       <input type="hidden" name="username" id="router-user">
@@ -69,6 +79,7 @@
   </script>
   <script src="hotspot.js"></script>
   <script src="config.js"></script>
+  <script src="banners.js"></script>
   <script src="portal.js"></script>
 </body>
 </html>

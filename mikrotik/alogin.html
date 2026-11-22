@@ -9,14 +9,25 @@
 </head>
 <body>
   <main>
-    <h1>You're connected</h1>
-    <p>Continue browsing or <a href="/status">view your Wi-Fi status</a>.</p>
+    <header class="hero">
+      <p class="eyebrow">HOTSPOT</p>
+      <h1>You're connected</h1>
+      <p>Continue browsing or <a href="/status">view your Wi-Fi status</a>.</p>
+      <a id="continue-browsing" class="button" hidden>Continue browsing</a>
+    </header>
+    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
+      <h2 id="banner-title">Featured</h2>
+      <div id="banner-tiles" class="tiles"></div>
+    </section>
     <span id="redirect" data-destination="$(link-redirect-esc)" hidden></span>
   </main>
   <script src="hotspot.js"></script>
+  <script src="config.js"></script>
+  <script src="banners.js"></script>
   <script>
     const destination = window.Hotspot?.destination(document.getElementById("redirect").dataset.destination);
-    if (destination) location.replace(destination);
+    if (window.HotspotBanners) window.HotspotBanners.connected(destination);
+    else if (destination) location.replace(destination);
   </script>
 </body>
 </html>
