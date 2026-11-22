@@ -65,7 +65,8 @@ post-login, sign-out, and error views. No new walled-garden hosts are needed.
 
 ## Send complimentary Wi-Fi codes
 
-In **MikroTik Notify Settings**, configure the Notify Platform HTTPS origin,
+Open **Network Billing System → MikroTik → MikroTik Notify Settings** as a
+System Manager. Configure the Notify Platform HTTPS origin,
 dedicated business account, API key and secret, then enable complimentary
 SMS. Configure Advanta and the approved sender in Notify Platform, not on
 the router. Give the service user access only to the dedicated Notify account
