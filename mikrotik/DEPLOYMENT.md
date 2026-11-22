@@ -55,7 +55,8 @@ Desk fields, required values, and optional features.
 
 ## Publish featured tiles from Desk
 
-Create a **MikroTik Banner** in Desk for the target zone. Enter a title and
+Open **Network Billing System → MikroTik → MikroTik Banner** in Desk and
+create a record for the target zone. Enter a title and
 optional **Display Price** (for example, `KSh 200`) and description. Save the
 draft, then upload a public image, add meaningful alt text, and set **Target URL**
 to the offer's HTTPS details page. Set the display order and optional

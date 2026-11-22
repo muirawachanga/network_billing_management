@@ -234,7 +234,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "MikroTik",
-   "link_count": 2,
+   "link_count": 3,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -257,9 +257,19 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "MikroTik Banner",
+   "link_count": 0,
+   "link_to": "MikroTik Banner",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-11-22 10:07:44.000000",
+ "modified": "2026-11-22 11:48:17.000000",
  "modified_by": "Administrator",
  "module": "Network Billing System",
  "name": "Network Billing System",

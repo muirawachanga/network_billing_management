@@ -286,8 +286,9 @@ wizard's temporary user after testing (replace `pilot-temp`):
 
 Start on a staging site. Create the **zone (disabled) → router → package**,
 configure sandbox payments, then link the router and enable the zone for testing.
-In Desk, the **Network Billing System → MikroTik** card opens the router
-and Notify settings; use Desk search for the other forms.
+In Desk, the **Network Billing System → MikroTik** card links to **MikroTik
+Router**, **MikroTik Notify Settings**, and **MikroTik Banner**. Use Desk
+search for the other forms.
 
 ### Captive Portal Zone
 
