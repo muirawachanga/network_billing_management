@@ -10,6 +10,7 @@ const inline = file => read(file).match(/<script>([\s\S]*?)<\/script>/)[1];
 const config = { billingOrigin: "https://billing.example.org", zoneId: "test-zone" };
 const packages = [
   { package_id: "day", label: "<Day Pass>", price: 30, currency: "KES", available: true },
+  { package_id: "evening", label: "Evening Pass", price: 40, currency: "KES", available: true },
   { package_id: "week", price: 100, available: false },
 ];
 const ready = { status: "SUCCESS", access_state: "READY", access_ready: true, voucher: "user_1.Pass.2" };
@@ -25,13 +26,18 @@ function portal({
   chap = true, original = "https://example.org/return?a=1&b=2", responses = {},
 } = {}) {
   const elements = new Map();
-  const el = id => {
-    if (!elements.has(id)) elements.set(id, {
+  function element() {
+    return {
       value: "", dataset: {}, listeners: {}, children: [],
+      attributes: {},
+      setAttribute(name, value) { this.attributes[name] = value; },
       addEventListener(type, handler) { this.listeners[type] = handler; },
-      append(child) { this.children.push(child); },
+      append(...children) { this.children.push(...children); },
       replaceChildren() { this.children = []; },
-    });
+    };
+  }
+  const el = id => {
+    if (!elements.has(id)) elements.set(id, element());
     return elements.get(id);
   };
   const requests = [];
@@ -48,7 +54,7 @@ function portal({
   });
   el("router-destination").dataset.original = encodeURIComponent(original);
   const context = vm.createContext({
-    document: { getElementById: el, createElement: () => ({}) },
+    document: { getElementById: el, createElement: element },
     location: { href: router + "/login", origin: router, replace: url => redirects.push(url) },
     sessionStorage: {
       getItem: key => storage.get(key) ?? null,
@@ -134,8 +140,14 @@ test("checkout waits for provisioning, sends a single scoped payment and resumes
   };
   const page = portal({ responses });
   await page.settled();
-  assert.equal(page.el("package").children[0].textContent, "<Day Pass> — KES 30");
-  assert.equal(page.el("package").children[1].disabled, true);
+  const [day, evening, week] = page.el("package-grid").children;
+  assert.deepEqual(day.children.map(span => span.textContent), ["<Day Pass>", "KES 30"]);
+  assert.equal(day.attributes["aria-pressed"], "true");
+  assert.equal(week.disabled, true);
+  assert.match(week.children[1].textContent, /Unavailable/);
+  evening.listeners.click();
+  assert.equal(day.attributes["aria-pressed"], "false");
+  assert.equal(evening.attributes["aria-pressed"], "true");
   page.el("phone").value = "0700000000";
   await page.send("purchase");
   await page.send("purchase");
@@ -143,7 +155,7 @@ test("checkout waits for provisioning, sends a single scoped payment and resumes
   assert.match(page.el("billing-message").textContent, /being prepared/);
   assert.deepEqual(page.requests.map(request => [request.method, request.fields]), [
     ["get_packages", { zone_id: "test-zone" }],
-    ["start_payment", { package_id: "day", phone: "0700000000", zone_id: "test-zone" }],
+    ["start_payment", { package_id: "evening", phone: "0700000000", zone_id: "test-zone" }],
     ["check_payment_status", { payment_token: "payment-bearer", zone_id: "test-zone" }],
   ]);
   responses.check_payment_status = ready;

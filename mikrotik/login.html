@@ -36,8 +36,10 @@
       <div id="billing-loader" class="loader" aria-hidden="true" hidden><span></span></div>
       <div id="billing" hidden>
         <form id="purchase" method="post" autocomplete="off" aria-describedby="package-message">
-          <label for="package">Package</label>
-          <select id="package" required></select>
+          <fieldset class="package-picker">
+            <legend>Choose a package</legend>
+            <div id="package-grid" class="package-grid"></div>
+          </fieldset>
           <label for="phone">M-Pesa phone number</label>
           <input id="phone" type="tel" required>
           <button id="pay" disabled>Send payment request</button>

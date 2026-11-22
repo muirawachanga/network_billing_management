@@ -83,7 +83,8 @@
   }
 
   let busy = false;
-  let packages = new Set();
+  const packages = new Map();
+  let selectedPackage = null;
   let recoveryReceipt = null;
   let credentials = null;
   let pollTimer;
@@ -103,7 +104,12 @@
   }
 
   function update() {
-    get("pay").disabled = busy || !!checkout || !packages.has(get("package").value);
+    const locked = busy || !!checkout;
+    get("pay").disabled = locked || !packages.get(selectedPackage)?.available;
+    for (const [id, { button, available }] of packages) {
+      button.disabled = locked || !available;
+      button.setAttribute("aria-pressed", String(id === selectedPackage));
+    }
     get("check").hidden = !statusFields();
     get("check").disabled = busy;
     get("connect").hidden = !credentials;
@@ -126,29 +132,44 @@
   }
 
   async function loadPackages() {
+    const grid = get("package-grid");
+    grid.setAttribute("aria-busy", "true");
+    grid.replaceChildren();
+    packages.clear();
+    selectedPackage = null;
     try {
       const results = await post("get_packages");
       if (!Array.isArray(results)) throw new Error("Invalid package list");
-      packages = new Set();
-      const select = get("package");
-      select.replaceChildren();
       for (const item of results) {
         if (!item || !usableToken(item.package_id) || !Number.isFinite(Number(item.price)) ||
-            Number(item.price) <= 0) continue;
-        const option = document.createElement("option");
-        option.value = item.package_id;
-        option.textContent = `${item.label || item.package_id} — ${item.currency || "KES"} ${item.price}` +
-          (item.available === true ? "" : " (unavailable)");
-        option.disabled = item.available !== true;
-        if (!option.disabled) packages.add(item.package_id);
-        select.append(option);
+            Number(item.price) <= 0 || packages.has(item.package_id)) continue;
+        const available = item.available === true;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "package-option";
+        button.disabled = true;
+        const label = document.createElement("span");
+        label.textContent = item.label || item.package_id;
+        const price = document.createElement("span");
+        price.className = "package-price";
+        price.textContent = `${item.currency || "KES"} ${item.price}${available ? "" : " · Unavailable"}`;
+        button.append(label, price);
+        button.addEventListener("click", () => {
+          if (busy || checkout || !available) return;
+          selectedPackage = item.package_id;
+          update();
+        });
+        packages.set(item.package_id, { button, available });
+        grid.append(button);
+        if (available && selectedPackage === null) selectedPackage = item.package_id;
       }
-      select.value = packages.values().next().value || "";
-      get("reload-packages").hidden = packages.size > 0;
-      message("package-message", packages.size ? "" : "No packages are available right now.");
+      get("reload-packages").hidden = selectedPackage !== null;
+      message("package-message", selectedPackage !== null ? "" : "No packages are available right now.");
     } catch {
       get("reload-packages").hidden = false;
       message("package-message", "Packages could not be loaded. You can still sign in with an access code.");
+    } finally {
+      grid.setAttribute("aria-busy", "false");
     }
   }
 
@@ -173,7 +194,7 @@
     recoveryReceipt = null;
     if (allowNewPayment) {
       saveCheckout(null);
-      get("reload-packages").hidden = packages.size > 0;
+      get("reload-packages").hidden = selectedPackage !== null;
     }
     billing(text);
   }
@@ -244,9 +265,9 @@
 
   const uncertain = "We could not confirm the payment request. If you received a prompt or receipt, contact support before paying again.";
   submit("purchase", () => run(async () => {
-    const packageId = get("package").value;
+    const packageId = selectedPackage;
     const phone = get("phone").value.trim();
-    if (checkout || !phone || !packages.has(packageId)) return;
+    if (checkout || !phone || !packages.get(packageId)?.available) return;
     // A timeout or reload during STK initiation must not silently enable another purchase.
     saveCheckout({ paymentToken: null });
     get("phone").value = "";
@@ -275,7 +296,6 @@
     await startPolling();
   }));
 
-  listen("package", "change", update);
   listen("reload-packages", "click", () => run(loadPackages));
   listen("check", "click", () => run(startPolling));
   listen("connect", "click", () => { if (!busy && credentials) logIn(credentials); });

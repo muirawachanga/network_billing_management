@@ -353,6 +353,9 @@ checkout token go to Frappe, not the SMS body. Frappe matches the verified
 payment and reconnects the customer when access is ready. No SMS
 verification is sent; without the original tab, contact staff.
 
+Available Wi-Fi packages appear as selectable tiles with prices; the first
+available package is selected by default.
+
 Featured tiles are informational on the login page and clickable after
 sign-in. Keep the walled garden limited to the Frappe checkout and its
 public banner images; don't add the advertisers' websites to it.
