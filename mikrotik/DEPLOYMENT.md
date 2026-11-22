@@ -59,8 +59,8 @@ publication dates, then enable the record. Images are public; never upload
 private content. Use the Desk preview before publishing. Guest users can see
 the tiles without clicking through; the configured links appear only on the
 post-login page. Publish two tiles to check that they slide in left to right
-and that Previous, Next, and Pause work on sign-in, recovery, post-login,
-sign-out, and error views. No new walled-garden hosts are needed.
+and that tapping dots, holding, and swiping work on sign-in, recovery,
+post-login, sign-out, and error views. No new walled-garden hosts are needed.
 
 ## Send complimentary Wi-Fi codes
 

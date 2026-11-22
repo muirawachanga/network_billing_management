@@ -5,49 +5,78 @@
 
   function rotate(section, track) {
     const slides = Array.from(track.children);
-    if (slides.length < 2) return;
-    const controls = get("banner-controls");
-    const pause = get("banner-pause");
+    if (!slides.length) return;
+    const pagination = get("banner-dots");
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let index = 0;
     let timer;
-    let paused = reducedMotion.matches;
+    let touch = null;
+    let touching = false;
+    let hovering = false;
+    const dots = slides.map((slide, i) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "banner-dot";
+      dot.setAttribute("aria-label", `Show featured item ${i + 1} of ${slides.length}: ${slide.querySelector("h3").textContent}`);
+      dot.disabled = slides.length === 1;
+      dot.addEventListener("click", () => {
+        show(i);
+        restartRotation();
+      });
+      pagination.append(dot);
+      return dot;
+    });
 
     function show(next) {
+      next = (next + slides.length) % slides.length;
+      if (next === index) return;
       slides[index].classList.remove("banner-active");
-      index = (next + slides.length) % slides.length;
+      dots[index].removeAttribute("aria-current");
+      index = next;
       slides[index].classList.add("banner-active");
+      dots[index].setAttribute("aria-current", "true");
     }
 
-    function syncRotation() {
+    function restartRotation() {
       clearInterval(timer);
-      pause.textContent = paused ? "Resume rotation" : "Pause rotation";
-      if (!paused) timer = setInterval(() => {
-        if (!document.hidden && !section.matches(":hover")) show(index + 1);
+      if (!reducedMotion.matches && !touching) timer = setInterval(() => {
+        if (!document.hidden && !hovering && !section.querySelector(":focus-visible")) show(index + 1);
       }, 6000);
     }
 
+    dots[0].setAttribute("aria-current", "true");
+    pagination.hidden = false;
+    if (slides.length === 1) return;
     slides[0].classList.add("banner-active");
     track.classList.add("banner-rotating");
-    controls.hidden = false;
-    get("banner-prev").addEventListener("click", () => show(index - 1));
-    get("banner-next").addEventListener("click", () => show(index + 1));
-    pause.addEventListener("click", () => {
-      paused = !paused;
-      syncRotation();
-    });
-    section.addEventListener("focusin", event => {
-      if (event.target === pause) return;
-      paused = true;
-      syncRotation();
-    });
-    reducedMotion.addEventListener?.("change", event => {
-      if (event.matches) {
-        paused = true;
-        syncRotation();
+    section.addEventListener("pointerenter", event => { hovering = event.pointerType === "mouse"; });
+    section.addEventListener("pointerleave", () => { hovering = false; });
+    track.addEventListener("touchstart", event => {
+      touching = true;
+      touch = event.touches.length === 1 ? event.touches[0] : null;
+      restartRotation();
+    }, { passive: true });
+    track.addEventListener("touchend", event => {
+      const end = Array.from(event.changedTouches).find(point => point.identifier === touch?.identifier);
+      if (end && touch) {
+        const dx = end.clientX - touch.clientX;
+        const dy = end.clientY - touch.clientY;
+        if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
+          event.preventDefault(); // Do not also follow an advertiser link after swiping.
+          show(index + (dx > 0 ? 1 : -1));
+        }
       }
+      touch = null;
+      touching = event.touches.length > 0;
+      restartRotation();
+    }, { passive: false });
+    track.addEventListener("touchcancel", event => {
+      touch = null;
+      touching = event.touches.length > 0;
+      restartRotation();
     });
-    syncRotation();
+    reducedMotion.addEventListener?.("change", restartRotation);
+    restartRotation();
   }
 
   async function render(config, connected) {

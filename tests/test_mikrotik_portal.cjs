@@ -298,62 +298,121 @@ test("bundle uses local assets and success redirects only to a safe router-suppl
   assert.match(read("error.html"), /href="\/login"/);
 });
 
-test("featured tiles rotate, can be paused, and only link after sign-in", async () => {
+async function featured({ connected = false, reducedMotion = false, banners = [
+  { title: "Offer", image: "/files/offer.png", url: "https://advertiser.example/" },
+  { title: "Invalid", image: "/files/../private.png", url: "javascript:alert(1)" },
+] } = {}) {
   function element() {
     const classes = new Set();
     return {
       children: [],
       listeners: {},
+      attributes: {},
       classList: { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name) },
       append(child) { this.children.push(child); },
       addEventListener(type, listener) { this.listeners[type] = listener; },
-      matches: () => false,
+      querySelector: () => null,
+      setAttribute(name, value) { this.attributes[name] = value; },
+      removeAttribute(name) { delete this.attributes[name]; },
     };
   }
-  for (const connected of [false, true]) {
-    const elements = new Map();
-    const el = id => {
-      if (!elements.has(id)) elements.set(id, element());
-      return elements.get(id);
-    };
-    let tick;
-    const context = vm.createContext({
-      URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
-      setInterval: callback => { tick = callback; },
-      clearInterval: () => { tick = undefined; },
-      matchMedia: () => ({ matches: connected }),
-      document: {
-        getElementById: el,
-        createElement: tag => Object.assign(element(), { tag }),
-      },
-      fetch: async () => ({
-        ok: true,
-        json: async () => ({ message: [
-          { title: "Offer", image: "/files/offer.png", url: "https://advertiser.example/" },
-          { title: "Invalid", image: "/files/../private.png", url: "javascript:alert(1)" },
-        ] }),
+  const elements = new Map();
+  const el = id => {
+    if (!elements.has(id)) elements.set(id, { ...element(), hidden: true });
+    return elements.get(id);
+  };
+  let tick;
+  const context = vm.createContext({
+    URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
+    setInterval: callback => { tick = callback; },
+    clearInterval: () => { tick = undefined; },
+    matchMedia: () => ({ matches: reducedMotion }),
+    document: {
+      getElementById: el,
+      createElement: tag => Object.assign(element(), {
+        tag,
+          querySelector(selector) {
+            return this.children.flatMap(child => child.children).find(child => child.tag === selector);
+          },
       }),
-    });
-    context.window = context;
-    vm.runInContext(read("banners.js"), context);
-    assert.equal(await context.HotspotBanners.render({ origin: config.billingOrigin, zone: config.zoneId }, connected), true);
+    },
+    fetch: async () => ({ ok: true, json: async () => ({ message: banners }) }),
+  });
+  context.window = context;
+  vm.runInContext(read("banners.js"), context);
+  const shown = await context.HotspotBanners.render({ origin: config.billingOrigin, zone: config.zoneId }, connected);
+  return { el, shown, get tick() { return tick; } };
+}
+
+test("one dot per featured tile tracks rotation and selects tiles; only signed-in ads link", async () => {
+  for (const connected of [false, true]) {
+    const page = await featured({ connected, reducedMotion: connected });
+    const { el } = page;
+    assert.equal(page.shown, true);
     const [first, second] = el("banner-tiles").children;
     assert.equal(first.children[0].src, config.billingOrigin + "/files/offer.png");
     assert.equal(first.children[1].children.some(child => child.tag === "a"), connected);
     assert.deepEqual(second.children[0].children.map(child => child.tag), ["h3"]);
-    assert.equal(first.classList.contains("banner-active"), true);
-    assert.equal(el("banner-controls").hidden, false);
+    const dots = el("banner-dots").children;
+    assert.equal(dots.length, 2);
+    assert.equal(dots[0].attributes["aria-current"], "true");
     if (connected) {
-      assert.equal(tick, undefined); // Reduced motion still permits manual browsing.
-      el("banner-next").listeners.click();
+      assert.equal(page.tick, undefined); // Reduced motion still permits manual browsing.
+      dots[1].listeners.click();
     } else {
-      tick();
-      el("banner-pause").listeners.click();
-      assert.equal(tick, undefined);
+      page.tick();
     }
     assert.equal(second.classList.contains("banner-active"), true);
-    assert.equal(first.classList.contains("banner-active"), false);
-    el("banner-prev").listeners.click();
+    assert.equal(dots[1].attributes["aria-current"], "true");
+    assert.equal(dots[0].attributes["aria-current"], undefined);
+    dots[0].listeners.click();
     assert.equal(first.classList.contains("banner-active"), true);
   }
+});
+
+test("touch hold pauses rotation; horizontal swipes navigate without following links", async () => {
+  const page = await featured({ connected: true, banners: [
+    { title: "First" }, { title: "Second" }, { title: "Third" },
+  ] });
+  const { listeners } = page.el("banner-tiles");
+  const dots = page.el("banner-dots").children;
+  const active = () => dots.findIndex(dot => dot.attributes["aria-current"] === "true");
+  const point = { identifier: 0, clientX: 100, clientY: 100 };
+  const start = () => listeners.touchstart({ touches: [point] });
+  const end = (clientX, clientY) => {
+    let cancelled = false;
+    listeners.touchend({
+      touches: [], changedTouches: [{ ...point, clientX, clientY }],
+      preventDefault: () => { cancelled = true; },
+    });
+    return cancelled;
+  };
+  start();
+  assert.equal(page.tick, undefined);
+  assert.equal(end(102, 100), false);
+  assert.equal(active(), 0);
+  assert.equal(typeof page.tick, "function");
+  start();
+  assert.equal(end(110, 165), false);
+  assert.equal(active(), 0);
+  start();
+  assert.equal(end(160, 108), true);
+  assert.equal(active(), 1);
+  start();
+  assert.equal(end(40, 110), true);
+  assert.equal(active(), 0);
+  start();
+  listeners.touchcancel({ touches: [] });
+  page.tick();
+  assert.equal(active(), 1);
+});
+
+test("single featured tile has one static dot; empty featured section stays hidden", async () => {
+  const single = await featured({ banners: [{ title: "Only item" }] });
+  assert.equal(single.shown, true);
+  assert.equal(single.el("banner-dots").children.length, 1);
+  assert.equal(single.tick, undefined);
+  const empty = await featured({ banners: [] });
+  assert.equal(empty.shown, false);
+  assert.equal(empty.el("banner-dots").hidden, true);
 });

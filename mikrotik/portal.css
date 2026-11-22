@@ -14,6 +14,7 @@ h3 { margin: .5rem 0; }
 .payment-tile { border-top: .3rem solid #169064; }
 .banner-section, .portal-tabs { margin-bottom: 1rem; }
 .banner-track { display: grid; overflow: hidden; border-radius: 1.1rem; }
+.banner-rotating { touch-action: pan-y pinch-zoom; }
 .banner { grid-area: 1 / 1; display: flex; align-items: center; flex-wrap: wrap; gap: .75rem 1rem; }
 .banner-rotating .banner:not(.banner-active) { visibility: hidden; }
 .banner-active { animation: banner-in .4s ease-out both; }
@@ -22,14 +23,18 @@ h3 { margin: .5rem 0; }
 .banner h3, .banner p { margin: 0 0 .25rem; }
 .banner a { display: inline-block; margin-top: .25rem; }
 @keyframes banner-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-.banner-controls, .portal-tabs { display: flex; flex-wrap: wrap; gap: .5rem; }
+.portal-tabs { display: flex; flex-wrap: wrap; gap: .5rem; }
 label { display: block; margin: .75rem 0 .3rem; font-weight: 650; }
 input, select, textarea, button, .button { font: inherit; border-radius: .55rem; padding: .6rem .75rem; min-height: 2.75rem; }
 input, select, textarea { width: 100%; background: #fff; color: inherit; border: 1px solid #77948d; }
 textarea { resize: vertical; }
 button, .button { display: inline-block; margin-top: .7rem; border: 1px solid transparent; background: #08614e; color: #fff; font-weight: 650; text-decoration: none; }
 button:disabled { background: #e0e9e7; color: #344d47; }
-.banner-controls button, .portal-tabs button { background: #fff; color: #08614e; border-color: #77948d; }
+.banner-dots { display: flex; justify-content: center; }
+.banner-dots .banner-dot { display: grid; place-items: center; width: 1.75rem; min-height: 1.75rem; padding: 0; margin: 0; background: transparent; }
+.banner-dot::before { content: ""; width: .5rem; height: .5rem; border: 1px solid #52736b; border-radius: 50%; }
+.banner-dot[aria-current="true"]::before { background: #08614e; border-color: #08614e; }
+.portal-tabs button { background: #fff; color: #08614e; border-color: #77948d; }
 .portal-tabs button { flex: 1 1 9rem; margin: 0; }
 .portal-tabs button[aria-selected="true"] { background: #08614e; color: #fff; border-color: #08614e; }
 .package-picker { min-width: 0; padding: 0; margin: .75rem 0 0; border: 0; }
