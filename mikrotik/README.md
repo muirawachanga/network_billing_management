@@ -439,7 +439,9 @@ automatically repeat router login. If a prompt was sent but no token was
 returned, the portal blocks a duplicate purchase in that tab; contact
 support before starting a new purchase.
 
-For paid recovery, select **Recover a payment** on the Wi-Fi sign-in page.
+Select **Already paid?** on the Wi-Fi sign-in page to enter an existing
+access code or recover a payment. Code entry works without Frappe and this
+tab opens by default when online checkout is not configured.
 Paste the M-Pesa confirmation message or enter its receipt in the same
 browser tab where you started checkout. Only the extracted receipt and the
 checkout token go to Frappe, not the SMS body. Frappe matches the verified

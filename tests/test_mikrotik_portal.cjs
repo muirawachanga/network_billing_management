@@ -102,6 +102,9 @@ function portal({
 
 test("manual CHAP login works without billing configuration and uses RFC MD5 bytes", () => {
   const page = portal({ settings: null });
+  assert.equal(page.el("recovery-tab").attributes["aria-selected"], "true");
+  assert.equal(page.el("recovery").hidden, false);
+  assert.equal(page.el("access-panel").hidden, true);
   const password = "páss." + "a".repeat(65);
   page.el("voucher").value = "Alice." + password;
   page.send("manual");
@@ -113,6 +116,15 @@ test("manual CHAP login works without billing configuration and uses RFC MD5 byt
   assert.equal(page.el("router-password").value, "");
   assert.equal(page.requests.length, 0);
   assert.equal(page.storage.size, 0);
+});
+
+test("the Already paid tab groups access code entry with receipt recovery", () => {
+  const html = read("login.html");
+  assert.match(html, /id="recovery-tab"[^>]*>Already paid\?<\/button>/);
+  const [purchase, recovery] = html.split('<div id="recovery"');
+  assert.match(purchase, /id="purchase"/);
+  assert.doesNotMatch(purchase, /id="manual"/);
+  assert.match(recovery, /id="manual"[\s\S]*id="receipt-form"/);
 });
 
 test("malformed CHAP, plain HTTP PAP, and off-router form actions fail closed", () => {

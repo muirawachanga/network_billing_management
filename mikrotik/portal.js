@@ -61,6 +61,7 @@
   const config = configuration(window.mikrotikPortalConfig);
   window.HotspotBanners?.preview();
   if (!config || !window.Hotspot) {
+    selectTab(1);
     message("recovery-message", "Online recovery is unavailable. Use an existing access code or contact support.");
     return;
   }
@@ -196,7 +197,7 @@
       message("package-message", selectedPackage !== null ? "" : "No packages are available right now.");
     } catch {
       get("reload-packages").hidden = false;
-      message("package-message", "Packages could not be loaded. You can still sign in with an access code.");
+      message("package-message", "Packages could not be loaded. Select “Already paid?” to use an access code.");
     } finally {
       grid.setAttribute("aria-busy", "false");
     }
@@ -253,7 +254,7 @@
           recoveryReady = recovering;
           if (recovering) recovery("Payment matched. Wi-Fi access is ready.");
           recoveryReceipt = null;
-          if (autoConnect) logIn(credentials, recovering ? "recovery-message" : "login-message");
+          if (autoConnect) logIn(credentials, recovering ? "recovery-message" : "billing-message");
           autoConnect = false;
           return;
         case "PROVISIONING":
@@ -334,7 +335,7 @@
   listen("reload-packages", "click", () => run(loadPackages));
   listen("check", "click", () => run(startPolling));
   listen("recovery-check", "click", () => run(startPolling));
-  listen("connect", "click", () => { if (!busy && credentials) logIn(credentials); });
+  listen("connect", "click", () => { if (!busy && credentials) logIn(credentials, "billing-message"); });
   listen("recovery-connect", "click", () => {
     if (!busy && recoveryReady && credentials) logIn(credentials, "recovery-message");
   });

@@ -16,27 +16,16 @@
     </section>
     <div id="portal-tabs" class="portal-tabs" role="tablist" aria-label="Wi-Fi access" hidden>
       <button id="access-tab" type="button" role="tab" aria-selected="true" aria-controls="access-panel">Wi-Fi access</button>
-      <button id="recovery-tab" type="button" role="tab" aria-selected="false" aria-controls="recovery" tabindex="-1">Recover a payment</button>
+      <button id="recovery-tab" type="button" role="tab" aria-selected="false" aria-controls="recovery" tabindex="-1">Already paid?</button>
     </div>
     $(if error)
     <p role="alert">The router did not accept the sign-in. Check your access details or try again.</p>
     $(endif)
     <div id="access-panel" class="tiles" role="tabpanel" aria-labelledby="access-tab">
-    <section class="tile" aria-labelledby="manual-title">
-      <span class="tile-label">ALREADY HAVE ACCESS?</span>
-      <h2 id="manual-title">Use an access code</h2>
-      <form id="manual" method="post" autocomplete="off">
-        <label for="voucher">Wi-Fi access code</label>
-        <input id="voucher" type="password" autocapitalize="none" spellcheck="false" required>
-        <button id="manual-submit" disabled>Connect</button>
-      </form>
-      <p id="login-message" role="status"></p>
-      <noscript><p>Enable JavaScript to sign in securely with this portal.</p></noscript>
-    </section>
     <section class="tile payment-tile" aria-labelledby="payment-title">
       <span class="tile-label">GET ONLINE</span>
       <h2 id="payment-title">Buy Wi-Fi access</h2>
-      <p id="billing-message" role="status">Online payment is unavailable. You can still use an access code.</p>
+      <p id="billing-message" role="status">Online payment is unavailable. Select “Already paid?” to use an access code.</p>
       <div id="billing-loader" class="loader" aria-hidden="true" hidden><span></span></div>
       <div id="billing" hidden>
         <form id="purchase" method="post" autocomplete="off" aria-describedby="package-message">
@@ -55,11 +44,20 @@
       </div>
     </section>
     </div>
-    <section id="recovery" class="tile" role="tabpanel" aria-labelledby="recovery-tab" hidden>
-      <span class="tile-label">ALREADY PAID?</span>
+    <div id="recovery" class="tiles" role="tabpanel" aria-labelledby="recovery-tab" hidden>
+    <section class="tile" aria-labelledby="manual-title">
+      <h2 id="manual-title">Use an access code</h2>
+      <form id="manual" method="post" autocomplete="off">
+        <label for="voucher">Wi-Fi access code</label>
+        <input id="voucher" type="password" autocapitalize="none" spellcheck="false" required>
+        <button id="manual-submit" disabled>Connect</button>
+      </form>
+      <p id="login-message" role="status"></p>
+    </section>
+    <section class="tile" aria-labelledby="recovery-title">
       <h2 id="recovery-title">Recover a payment</h2>
-      <p id="recovery-help">Use the same tab you paid in. If you no longer have it, contact support.</p>
       <form id="receipt-form" method="post" autocomplete="off" aria-describedby="recovery-help" hidden>
+        <p id="recovery-help">Use the same browser tab you paid in. If you no longer have it, contact support.</p>
         <label for="receipt">Paste your M-Pesa message or enter the receipt code</label>
         <textarea id="receipt" rows="3" maxlength="2000" autocapitalize="characters" spellcheck="false" required></textarea>
         <button id="recover-payment">Recover access</button>
@@ -68,6 +66,8 @@
       <button id="recovery-connect" type="button" hidden>Connect to Wi-Fi</button>
       <p id="recovery-message" role="status"></p>
     </section>
+    </div>
+    <noscript><p>Enable JavaScript to sign in securely with this portal.</p></noscript>
     <form id="router-login" method="post" action="$(link-login-only)" autocomplete="off" hidden>
       <input type="hidden" name="username" id="router-user">
       <input type="hidden" name="password" id="router-password">

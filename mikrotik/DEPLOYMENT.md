@@ -139,7 +139,7 @@ Keep live sales off until these checks pass on the target router:
   issuance and one RouterOS user. Inject a worker crash/transport loss after
   adding the RouterOS user and verify that retry confirms the same user,
   without changing its counters. Check that receipt alone does not return
-  a code. Use **Recover a payment** on the sign-in page to test a pasted
+  a code. Use **Already paid?** on the sign-in page to test a pasted
   M-Pesa message, including a wrong receipt and a new browser tab without
   the original checkout token.
 
