@@ -33,8 +33,10 @@ Desk fields, required values, and optional features.
    client downloads). For example, use `1000000/5000000` for 1 Mbps up and
    5 Mbps down. Leave burst options off. Do not edit profiles while there are
    purchases against them; create another version.
-3. Create a disabled **Captive Portal Zone** and a **MikroTik Router**
-   configuration for it. Record the expected system identity, server, API
+3. Save a **Captive Portal Zone** with **Access Backend** set to **MikroTik**
+   and **Enabled** unchecked. As a System Manager, click **Create MikroTik
+   Router** on the saved zone to start a configuration with the zone
+   prefilled. Record the expected system identity, server, API
    endpoint and dedicated account. Save the account password in the Password
    field; don't put it in scripts or source control. Choose the router in the
    zone, set **Access Backend** to **MikroTik**, and configure each enabled

@@ -261,9 +261,11 @@ access before leaving Safe Mode. To close the pilot listener, run
 1. On the Frappe host, run `bench --site SITE migrate` and make sure the
    scheduler and workers are running. Configure and enable package checkout
    with Kopo Kopo in **sandbox** using the [field reference](#frappe-field-reference).
-2. In Desk, create a disabled **Captive Portal Zone**, then a **MikroTik
-   Router** linked to that zone. Open the zone again,
-   set its backend to **MikroTik**, select that router, and enable the zone.
+2. In Desk, set **Access Backend** to **MikroTik** and save the **Captive Portal
+   Zone** with **Enabled** unchecked. As a System Manager, click **Create
+   MikroTik Router** on the saved zone to open the router form with **Zone**
+   prefilled. Save the router, reopen the zone, select it under **MikroTik
+   Router Configuration**, and enable the zone.
    Leave **Pause New MikroTik Sales** unchecked for the sandbox test. Save
    and enable at least one matching **Internet Package Profile**.
 3. Connect a guest device, open the captive sign-in page, and complete a
