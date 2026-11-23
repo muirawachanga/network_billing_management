@@ -264,8 +264,9 @@ access before leaving Safe Mode. To close the pilot listener, run
 2. In Desk, set **Access Backend** to **MikroTik** and save the **Captive Portal
    Zone** with **Enabled** unchecked. As a System Manager, click **Create
    MikroTik Router** on the saved zone to open the router form with **Zone**
-   prefilled. Save the router, reopen the zone, select it under **MikroTik
-   Router Configuration**, and enable the zone.
+   prefilled. If you open the router form directly, its **Zone** picker also
+   lists saved, disabled MikroTik zones. Save the router, reopen the zone,
+   select it under **MikroTik Router Configuration**, and enable the zone.
    Leave **Pause New MikroTik Sales** unchecked for the sandbox test. Save
    and enable at least one matching **Internet Package Profile**.
 3. Connect a guest device, open the captive sign-in page, and complete a

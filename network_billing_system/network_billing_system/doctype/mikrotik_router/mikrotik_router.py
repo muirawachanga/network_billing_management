@@ -5,6 +5,25 @@ import frappe
 from frappe.model.document import Document
 
 
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def search_zones(doctype, txt, searchfield, start, page_len, filters, as_dict=False):
+    if doctype != "Captive Portal Zone":
+        frappe.throw(frappe._("This search is only for Captive Portal Zones."))
+
+    # Standard Link search hides disabled zones, which must be selectable during setup.
+    return frappe.get_list(
+        "Captive Portal Zone",
+        fields=["name", "display_name"],
+        filters={"backend": "MikroTik"},
+        or_filters=[["name", "like", f"%{txt}%"], ["display_name", "like", f"%{txt}%"]],
+        order_by="name asc",
+        limit_start=max(0, start),
+        limit_page_length=max(1, min(page_len, 100)),
+        as_list=not as_dict,
+    )
+
+
 class MikroTikRouter(Document):
     def validate(self):
         host = self.host or ""

@@ -42,3 +42,16 @@ test("router creation is not offered for unsaved, pfSense, or already-linked zon
   assert.equal(page.action, undefined);
   assert.match(page.intro, /System Manager/);
 });
+
+test("the router's Zone picker uses the setup query instead of the default Link search", () => {
+  let handlers, query;
+  const frappe = { ui: { form: { on: (_, value) => { handlers = value; } } } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,
+    "../network_billing_system/network_billing_system/doctype/mikrotik_router/mikrotik_router.js"), "utf8"),
+  { frappe });
+  handlers.setup({ set_query(field, callback) {
+    if (field === "zone") query = callback();
+  } });
+  assert.match(query.query, /\.mikrotik_router\.search_zones$/);
+  assert.equal(query.filters?.enabled, undefined);
+});
