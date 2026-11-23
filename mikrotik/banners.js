@@ -149,18 +149,21 @@
     }
   }
 
+  function billingOrigin(value, protocol) {
+    try {
+      const url = new URL(value);
+      if (url.protocol === protocol && (value === url.origin || value === url.origin + "/")) return url.origin;
+    } catch { /* Banners are optional. */ }
+    return null;
+  }
+
   function published(connected) {
     const settings = window.mikrotikPortalConfig;
-    let origin;
-    try {
-      origin = new URL(settings?.billingOrigin);
-    } catch {
-      return false;
-    }
-    if (origin.protocol !== "https:" || (settings.billingOrigin !== origin.origin &&
-        settings.billingOrigin !== origin.origin + "/") ||
-        typeof settings.zoneId !== "string" || !settings.zoneId.trim()) return false;
-    return render({ origin: origin.origin, zone: settings.zoneId.trim() }, connected);
+    const zone = typeof settings?.zoneId === "string" ? settings.zoneId.trim() : "";
+    const checkoutOrigin = billingOrigin(settings?.billingOrigin, "https:");
+    const origin = checkoutOrigin || billingOrigin(settings?.billingOriginLocal, "http:");
+    if (!origin || !zone) return false;
+    return render({ origin, zone }, connected && Boolean(checkoutOrigin));
   }
 
   async function connected(destination) {

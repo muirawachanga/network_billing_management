@@ -186,6 +186,30 @@ cookie authentication. Keep the API on the configured HTTPS host without
 redirects. The expanded RouterOS `link-login-only` must be on the same
 origin as the portal page.
 
+#### Local HTTP preview (optional)
+
+To preview packages and banners without a certificate, leave `billingOrigin`
+blank and set `billingOriginLocal` to your local Frappe HTTP origin:
+
+```js
+window.mikrotikPortalConfig = {
+  billingOrigin: "",
+  billingOriginLocal: "http://frappe.local.com:8000",
+  zoneId: "digissiet-pilot",
+};
+```
+
+Use the exact Desk zone ID. Guest devices must resolve the local hostname and
+reach that development host and port through the guest firewall and walled
+garden. Restrict the exception to that destination (for example,
+`192.168.88.50` on TCP `8000`); don't open the rest of the trusted LAN. Set
+CORS on local Frappe to `http://wifi.digissiet.com`. Package and
+banner publication still follow the usual Frappe settings. The preview does
+not enable payments, payment status, receipt recovery, or ad click-through;
+manual RouterOS code entry still works. Use only on a local test network:
+HTTP does not protect displayed content from tampering. A valid HTTPS
+`billingOrigin` takes precedence and never falls back to HTTP on request failure.
+
 ### 4. Restrict the management API before enabling it
 
 The commands below use **TCP 8728 (`api`)**, not `api-ssl`. Before enabling

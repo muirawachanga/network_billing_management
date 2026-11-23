@@ -118,6 +118,41 @@ test("manual CHAP login works without billing configuration and uses RFC MD5 byt
   assert.equal(page.storage.size, 0);
 });
 
+test("local HTTP previews only packages and leaves manual login available", async () => {
+  const local = "http://frappe.local.com:8000";
+  const page = portal({ settings: { billingOriginLocal: local, zoneId: config.zoneId } });
+  await page.settled();
+  assert.equal(page.requests.length, 1);
+  const [request] = page.requests;
+  assert.ok(request.url.startsWith(local + "/"));
+  assert.equal(request.method, "get_packages");
+  assert.deepEqual(request.fields, { zone_id: config.zoneId });
+  assert.ok(page.el("package-grid").children.length);
+  assert.equal(page.el("payment-controls").hidden, true);
+  assert.equal(page.el("pay").disabled, true);
+  assert.equal(page.el("receipt-form").listeners.submit, undefined);
+  assert.equal(page.el("check").listeners.click, undefined);
+  page.send("purchase");
+  assert.equal(page.requests.length, 1);
+  page.send("recovery-tab", "click");
+  page.el("voucher").value = "pilot.test-password";
+  page.send("manual");
+  assert.equal(page.submissions[0].user, "pilot");
+});
+
+test("checkout prefers HTTPS without falling back, and HTTP must be explicitly configured", async () => {
+  const local = "http://frappe.local.com:8000";
+  const production = portal({
+    settings: { ...config, billingOriginLocal: local },
+    responses: { get_packages: new Error("offline") },
+  });
+  const unconfigured = portal({ settings: { ...config, billingOrigin: local } });
+  await production.settled();
+  assert.equal(production.requests.length, 1);
+  assert.ok(production.requests[0].url.startsWith(config.billingOrigin + "/"));
+  assert.equal(unconfigured.requests.length, 0);
+});
+
 test("the Already paid tab groups access code entry with receipt recovery", () => {
   const html = read("login.html");
   assert.match(html, /id="recovery-tab"[^>]*>Already paid\?<\/button>/);
@@ -310,7 +345,7 @@ test("bundle uses local assets and success redirects only to a safe router-suppl
   assert.match(read("error.html"), /href="\/login"/);
 });
 
-async function featured({ connected = false, reducedMotion = false, banners = [
+async function featured({ connected = false, reducedMotion = false, settings, banners = [
   { title: "Offer", image: "/files/offer.png", url: "https://advertiser.example/", display_price: "KSh 200" },
   { title: "Invalid", image: "/files/../private.png", url: "javascript:alert(1)" },
 ] } = {}) {
@@ -334,6 +369,7 @@ async function featured({ connected = false, reducedMotion = false, banners = [
     return elements.get(id);
   };
   let tick;
+  const requests = [];
   const context = vm.createContext({
     URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
     setInterval: callback => { tick = callback; },
@@ -348,13 +384,32 @@ async function featured({ connected = false, reducedMotion = false, banners = [
           },
       }),
     },
-    fetch: async () => ({ ok: true, json: async () => ({ message: banners }) }),
+    mikrotikPortalConfig: settings,
+    fetch: async (url, options) => {
+      requests.push({ url, fields: Object.fromEntries(options.body) });
+      return { ok: true, json: async () => ({ message: banners }) };
+    },
   });
   context.window = context;
   vm.runInContext(read("banners.js"), context);
-  const shown = await context.HotspotBanners.render({ origin: config.billingOrigin, zone: config.zoneId }, connected);
-  return { el, shown, get tick() { return tick; } };
+  const shown = settings
+    ? connected
+      ? (await context.HotspotBanners.connected(), !el("portal-banners").hidden)
+      : await context.HotspotBanners.preview()
+    : await context.HotspotBanners.render({ origin: config.billingOrigin, zone: config.zoneId }, connected);
+  return { el, shown, requests, get tick() { return tick; } };
 }
+
+test("local HTTP banners load but cannot direct even signed-in guests to advertisers", async () => {
+  const local = "http://frappe.local.com:8000";
+  const page = await featured({ connected: true, settings: { billingOriginLocal: local, zoneId: config.zoneId } });
+  assert.equal(page.shown, true);
+  assert.ok(page.requests[0].url.startsWith(local + "/"));
+  assert.deepEqual(page.requests[0].fields, { zone_id: config.zoneId });
+  const [tile] = page.el("banner-tiles").children;
+  assert.equal(tile.tag, "article");
+  assert.equal(tile.children[0].src, local + "/files/offer.png");
+});
 
 test("one dot per featured tile tracks rotation and selects tiles; only signed-in ads link", async () => {
   for (const connected of [false, true]) {

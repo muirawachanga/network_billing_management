@@ -49,27 +49,29 @@
     get("manual-submit").disabled = false;
   }
 
-  function configuration(raw) {
+  function billingOrigin(value, protocol) {
     try {
-      if (typeof raw?.billingOrigin !== "string" || typeof raw.zoneId !== "string") return null;
-      const url = new URL(raw.billingOrigin);
-      if (url.protocol === "https:" && (raw.billingOrigin === url.origin || raw.billingOrigin === url.origin + "/") &&
-          raw.zoneId.trim()) return { origin: url.origin, zone: raw.zoneId.trim() };
+      const url = new URL(value);
+      if (url.protocol === protocol && (value === url.origin || value === url.origin + "/")) return url.origin;
     } catch { /* Billing is optional. */ }
     return null;
   }
-  const config = configuration(window.mikrotikPortalConfig);
+  const settings = window.mikrotikPortalConfig;
+  const zone = typeof settings?.zoneId === "string" ? settings.zoneId.trim() : "";
+  const checkoutOrigin = billingOrigin(settings?.billingOrigin, "https:");
+  const origin = checkoutOrigin || billingOrigin(settings?.billingOriginLocal, "http:");
+  const preview = !checkoutOrigin;
   window.HotspotBanners?.preview();
-  if (!config || !window.Hotspot) {
+  if (!origin || !zone || !window.Hotspot) {
     selectTab(1);
     message("recovery-message", "Online recovery is unavailable. Use an existing access code or contact support.");
     return;
   }
-  const storageKey = JSON.stringify(["mikrotik-checkout", config.origin, config.zone]);
+  const storageKey = JSON.stringify(["mikrotik-checkout", checkoutOrigin, zone]);
   const usableToken = value => typeof value === "string" && value.trim().length > 0;
   let checkout = null;
   try {
-    const saved = JSON.parse(sessionStorage.getItem(storageKey));
+    const saved = preview ? null : JSON.parse(sessionStorage.getItem(storageKey));
     if (saved && (usableToken(saved.paymentToken) || saved.paymentToken === null)) {
       checkout = { paymentToken: saved.paymentToken };
     }
@@ -84,12 +86,13 @@
   }
 
   async function post(method, fields = {}) {
+    if (preview && method !== "get_packages") throw new Error("Checkout requires HTTPS");
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     try {
-      const result = await fetch(config.origin + "/api/method/network_billing_system.api.captive_portal." + method, {
+      const result = await fetch(origin + "/api/method/network_billing_system.api.captive_portal." + method, {
         method: "POST",
-        body: new URLSearchParams({ ...fields, zone_id: config.zone }),
+        body: new URLSearchParams({ ...(preview ? {} : fields), zone_id: zone }),
         signal: controller.signal,
         credentials: "omit",
         cache: "no-store",
@@ -131,7 +134,7 @@
 
   function update() {
     const locked = busy || !!checkout;
-    get("pay").disabled = locked || !packages.get(selectedPackage)?.available;
+    get("pay").disabled = preview || locked || !packages.get(selectedPackage)?.available;
     for (const [id, { button, available }] of packages) {
       button.disabled = locked || !available;
       button.setAttribute("aria-pressed", String(id === selectedPackage));
@@ -299,6 +302,18 @@
     return checkStatus();
   }
 
+  listen("reload-packages", "click", () => run(loadPackages));
+  get("billing").hidden = false;
+  if (preview) {
+    get("payment-title").textContent = "Preview Wi-Fi packages";
+    get("payment-controls").hidden = true;
+    billing("Local preview only. Payments are disabled.");
+    recovery("Online recovery requires HTTPS. You can still use an access code.");
+    submit("purchase", () => {});
+    void run(loadPackages);
+    return;
+  }
+
   const uncertain = "We could not confirm the payment request. If you received a prompt or receipt, contact support before paying again.";
   submit("purchase", () => run(async () => {
     const packageId = selectedPackage;
@@ -332,14 +347,13 @@
     await startPolling();
   }));
 
-  listen("reload-packages", "click", () => run(loadPackages));
   listen("check", "click", () => run(startPolling));
   listen("recovery-check", "click", () => run(startPolling));
   listen("connect", "click", () => { if (!busy && credentials) logIn(credentials, "billing-message"); });
   listen("recovery-connect", "click", () => {
     if (!busy && recoveryReady && credentials) logIn(credentials, "recovery-message");
   });
-  get("billing").hidden = get("receipt-form").hidden = false;
+  get("receipt-form").hidden = false;
   billing(checkout ? "" : "Loading Wi-Fi packages…");
   void run(async () => {
     if (checkout?.paymentToken) {

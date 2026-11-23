@@ -33,9 +33,11 @@
             <legend>Choose a package</legend>
             <div id="package-grid" class="package-grid"></div>
           </fieldset>
-          <label for="phone">M-Pesa phone number</label>
-          <input id="phone" type="tel" required>
-          <button id="pay" disabled>Send payment request</button>
+          <div id="payment-controls">
+            <label for="phone">M-Pesa phone number</label>
+            <input id="phone" type="tel" required>
+            <button id="pay" disabled>Send payment request</button>
+          </div>
         </form>
         <p id="package-message" role="status"></p>
         <button id="reload-packages" type="button" hidden>Reload packages</button>
