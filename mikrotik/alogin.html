@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Wi-Fi connected</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+  <main>
+    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
+      <h2 id="banner-title">Featured</h2>
+      <div id="banner-tiles" class="banner-track"></div>
+      <div id="banner-dots" class="banner-dots" role="group" aria-label="Featured items" hidden></div>
+    </section>
+    <a id="continue-browsing" class="button" hidden>Continue browsing</a>
+    <p><a href="/status">View your Wi-Fi status</a></p>
+    <span id="redirect" data-destination="$(link-redirect-esc)" hidden></span>
+  </main>
+  <script src="hotspot.js"></script>
+  <script src="config.js"></script>
+  <script src="banners.js"></script>
+  <script>
+    const destination = window.Hotspot?.destination(document.getElementById("redirect").dataset.destination);
+    if (window.HotspotBanners) window.HotspotBanners.connected(destination);
+    else if (destination) location.replace(destination);
+  </script>
+</body>
+</html>

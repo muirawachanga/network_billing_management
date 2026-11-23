@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Wi-Fi sign-in error</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+  <main>
+    <section id="portal-banners" class="banner-section" aria-labelledby="banner-title" hidden>
+      <h2 id="banner-title">Featured</h2>
+      <div id="banner-tiles" class="banner-track"></div>
+      <div id="banner-dots" class="banner-dots" role="group" aria-label="Featured items" hidden></div>
+    </section>
+    <h1>Wi-Fi sign-in could not finish</h1>
+    <p>Return to sign-in to check an existing payment or use an access code. Don't pay again for the same purchase.</p>
+    <p><a href="/login">Return to Wi-Fi sign-in</a></p>
+  </main>
+  <script src="config.js"></script>
+  <script src="banners.js"></script>
+  <script>window.HotspotBanners?.preview();</script>
+</body>
+</html>

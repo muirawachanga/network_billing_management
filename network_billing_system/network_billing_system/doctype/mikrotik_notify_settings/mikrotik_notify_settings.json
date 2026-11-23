@@ -1,0 +1,16 @@
+{
+ "doctype": "DocType",
+ "name": "MikroTik Notify Settings",
+ "module": "Network Billing System",
+ "issingle": 1,
+ "engine": "InnoDB",
+ "field_order": ["enabled", "base_url", "account", "api_key", "api_secret"],
+ "fields": [
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Enable Complimentary Access SMS", "default": "0"},
+  {"fieldname": "base_url", "fieldtype": "Data", "label": "Notify Platform HTTPS Origin"},
+  {"fieldname": "account", "fieldtype": "Data", "label": "Dedicated Notify Business Account"},
+  {"fieldname": "api_key", "fieldtype": "Password", "label": "Notify API Key", "no_copy": 1},
+  {"fieldname": "api_secret", "fieldtype": "Password", "label": "Notify API Secret", "no_copy": 1}
+ ],
+ "permissions": [{"role": "System Manager", "read": 1, "write": 1}]
+}

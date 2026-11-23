@@ -1,0 +1,29 @@
+{
+ "doctype": "DocType",
+ "name": "MikroTik Complimentary Grant",
+ "module": "Network Billing System",
+ "autoname": "hash",
+ "engine": "InnoDB",
+ "field_order": ["status", "recipient", "zone", "package", "duration_minutes", "reason", "source_reference", "issuer", "approved_at", "issuance", "notification", "router", "hotspot_server", "hotspot_profile", "hotspot_rate_limit"],
+ "fields": [
+  {"fieldname": "status", "label": "Approval Status", "fieldtype": "Select", "options": "Draft\nApproved", "default": "Draft", "read_only": 1, "in_list_view": 1, "no_copy": 1},
+  {"fieldname": "recipient", "label": "Recipient Mobile Number", "fieldtype": "Data", "reqd": 1, "no_copy": 1},
+  {"fieldname": "zone", "label": "MikroTik Zone", "fieldtype": "Link", "options": "Captive Portal Zone", "reqd": 1, "search_index": 1, "in_list_view": 1},
+  {"fieldname": "package", "label": "Package Policy", "fieldtype": "Link", "options": "Internet Package Profile", "reqd": 1},
+  {"fieldname": "duration_minutes", "label": "Connected Time (Minutes)", "fieldtype": "Int", "reqd": 1},
+  {"fieldname": "reason", "label": "Reason", "fieldtype": "Small Text", "reqd": 1, "no_copy": 1},
+  {"fieldname": "source_reference", "label": "Unique Source Reference", "fieldtype": "Data", "reqd": 1, "unique": 1, "no_copy": 1, "in_list_view": 1},
+  {"fieldname": "issuer", "label": "Approved By", "fieldtype": "Link", "options": "User", "read_only": 1, "no_copy": 1},
+  {"fieldname": "approved_at", "label": "Approved At", "fieldtype": "Datetime", "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "issuance", "label": "Access Issuance and Provisioning Status", "fieldtype": "Link", "options": "MikroTik Issuance", "read_only": 1, "no_copy": 1},
+  {"fieldname": "notification", "label": "SMS Notification Status", "fieldtype": "Link", "options": "MikroTik Grant Notification", "read_only": 1, "no_copy": 1},
+  {"fieldname": "router", "label": "Approved Router", "fieldtype": "Link", "options": "MikroTik Router", "read_only": 1, "no_copy": 1},
+  {"fieldname": "hotspot_server", "label": "Approved Hotspot Server", "fieldtype": "Data", "read_only": 1, "no_copy": 1},
+  {"fieldname": "hotspot_profile", "label": "Approved Hotspot Profile", "fieldtype": "Data", "read_only": 1, "no_copy": 1},
+  {"fieldname": "hotspot_rate_limit", "label": "Approved Rate Limit", "fieldtype": "Data", "read_only": 1, "no_copy": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "create": 1, "write": 1, "report": 1},
+  {"role": "Network Administrator", "read": 1, "create": 1, "write": 1, "report": 1}
+ ]
+}
