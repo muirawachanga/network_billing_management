@@ -77,6 +77,17 @@ def owner_for(issuance):
     return "frappe-hotspot:" + issuance.username
 
 
+_CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+_CODE_USERNAME_PREFIX = "nb2-"
+
+
+def customer_code(username, password):
+    if username.startswith(_CODE_USERNAME_PREFIX):
+        code = username[len(_CODE_USERNAME_PREFIX):] + password
+        return "-".join(code[i:i + 4] for i in range(0, len(code), 4))
+    return f"{username}.{password}"
+
+
 def _initial_key(checkout_name):
     return "purchase:" + checkout_name
 
@@ -109,8 +120,8 @@ def _create_issuance(key, router, seconds, **source):
     existing = frappe.db.get_value(ISSUANCE, {"issuance_key": key}, "name")
     if existing:
         return frappe.get_doc(ISSUANCE, existing)
-    username = "nb-" + secrets.token_hex(12)
-    password = secrets.token_urlsafe(18)
+    username = _CODE_USERNAME_PREFIX + "".join(secrets.choice(_CODE_ALPHABET) for _ in range(10))
+    password = "".join(secrets.choice(_CODE_ALPHABET) for _ in range(14))
     fingerprint = hashlib.sha256(f"{username}.{password}".encode()).hexdigest()
     doc = frappe.get_doc({
         "doctype": ISSUANCE, "router": router, **source,
@@ -119,11 +130,19 @@ def _create_issuance(key, router, seconds, **source):
         "next_attempt_at": now_datetime(),
     }).insert(ignore_permissions=True)
     after_commit = getattr(frappe.db, "after_commit", None)
-    if after_commit is not None:
+    if after_commit is not None and (source.get("complimentary_grant") or source.get("predecessor")):
         after_commit.add(partial(_enqueue_provision, doc.name))
-    # Frappe v14 has no callback hook. Its scheduler dispatches the committed
-    # issuance without making the checkout request depend on Redis.
     return doc
+
+
+def pending_purchase_issuance(checkout_name):
+    return frappe.db.get_value(ISSUANCE, {
+        "issuance_key": _initial_key(checkout_name), "state": "Pending",
+    }, "name")
+
+
+def dispatch_purchase(issuance_name):
+    _enqueue_provision(issuance_name)
 
 
 def _enqueue_provision(name):
@@ -203,7 +222,9 @@ def access_response(checkout, response, reveal=False, recover_replacement=False)
         "Replaced": "This Wi-Fi code was replaced. Check your phone for the replacement notification.",
     }[state]
     if state == "Ready" and reveal:
-        response.update(voucher=f"{issuance.username}.{issuance.get_password('password')}",
+        password = issuance.get_password("password")
+        response.update(voucher=f"{issuance.username}.{password}",
+                         access_code=customer_code(issuance.username, password),
                         package_id=checkout.package, zone_id=checkout.zone,
                         duration_minutes=checkout.duration_minutes,
                         duration_seconds=issuance.duration_seconds, expiry_authority="mikrotik")

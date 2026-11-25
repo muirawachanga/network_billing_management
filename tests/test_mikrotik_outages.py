@@ -31,6 +31,7 @@ class TestMikroTikOutages(unittest.TestCase):
         self.frappe.get_doc.side_effect = self.get_doc
         self.frappe.db.set_value.side_effect = self.set_value
         self.access = MagicMock()
+        self.access.customer_code.return_value = "2345-6789-ABCD-EFGH-JKLM-NPQR"
         self.routeros = MagicMock(RouterError=RouterError)
         self.client = MagicMock()
         self.client.revoke_user.return_value = None
@@ -203,7 +204,8 @@ class TestMikroTikOutages(unittest.TestCase):
             self.assertEqual(self.outbox.status, "Needs Review")
             self.worker._notify("outbox")
             sender.assert_called_once()
-            self.assertIn("username.test-password", sender.call_args.args[1])
+            self.access.customer_code.assert_called_once_with("username", "test-password")
+            self.assertIn("2345-6789-ABCD-EFGH-JKLM-NPQR", sender.call_args.args[1])
             self.outbox.update(status="Pending")
             self.issuance.update(state="Replacing")
             self.worker._notify("outbox")

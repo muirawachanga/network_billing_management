@@ -32,17 +32,17 @@ class MikroTikAccessTest(unittest.TestCase):
         self.assertEqual(issued.duration_seconds, 300)
         self.assertEqual(issued.issuance_key, "purchase:paid-order")
         self.assertNotIn(issued.password, issued.fingerprint)
+        code = self.access.customer_code(issued.username, issued.password)
+        self.assertRegex(code, r"^(?:[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}-){5}[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$")
+        self.assertEqual(code.replace("-", ""), issued.username.removeprefix("nb2-") + issued.password)
         self.frappe.enqueue.assert_not_called()
-        callback = self.frappe.db.after_commit.add.call_args.args[0]
-        callback()
-        self.frappe.enqueue.assert_called_once_with(self.access.provision, issuance_name=issued.name)
         self.frappe.db.get_value.return_value = issued.name
         self.frappe.get_doc.side_effect = None
         self.frappe.get_doc.return_value = issued
         self.assertIs(self.access.create_issuance(self.checkout), issued)
-        self.frappe.db.after_commit.add.assert_called_once()
+        self.frappe.db.after_commit.add.assert_not_called()
 
-    def test_v14_keeps_issuance_pending_for_scheduler_without_an_after_commit_hook(self):
+    def test_v14_dispatches_immediately_and_keeps_scheduler_fallback_when_queue_fails(self):
         del self.frappe.db.after_commit
         issued = self.access.create_issuance(self.checkout)
         self.assertEqual(issued.state, "Pending")
@@ -50,6 +50,12 @@ class MikroTikAccessTest(unittest.TestCase):
         self.frappe.enqueue.assert_not_called()
         self.frappe.db.commit.assert_not_called()
 
+        self.frappe.enqueue.side_effect = ConnectionError("queue unavailable")
+        self.access.dispatch_purchase(issued.name)
+        self.frappe.enqueue.assert_called_once_with(self.access.provision, issuance_name=issued.name)
+        self.frappe.logger.return_value.warning.assert_called_once()
+
+        self.frappe.enqueue.reset_mock(side_effect=True)
         self.frappe.get_all.return_value = [issued.name]
         self.access.run_provisioning()
         self.assertEqual(self.frappe.get_all.call_args.kwargs["filters"], {
@@ -92,8 +98,13 @@ class MikroTikAccessTest(unittest.TestCase):
             result = self.access.access_response(self.checkout, {}, reveal=True)
             self.assertEqual(result["access_state"], expected)
             self.assertEqual("voucher" in result, state == "Ready")
+            self.assertEqual("access_code" in result, state == "Ready")
+            if state == "Ready":
+                self.assertEqual(result["access_code"], result["voucher"])
         issuance.state = "Ready"
-        self.assertNotIn("voucher", self.access.access_response(self.checkout, {}, reveal=False))
+        denied = self.access.access_response(self.checkout, {}, reveal=False)
+        self.assertNotIn("voucher", denied)
+        self.assertNotIn("access_code", denied)
 
 
 if __name__ == "__main__":

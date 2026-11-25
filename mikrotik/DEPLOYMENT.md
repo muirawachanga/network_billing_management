@@ -147,8 +147,12 @@ Keep live sales off until these checks pass on the target router:
 
 ## Operations and rollback
 
-On Frappe v14, the scheduler picks up committed pending issuances on its
-next provisioning run; keep the scheduler and workers running. To recover
+On Frappe v14 and newer, a newly verified MikroTik purchase is committed
+and immediately queued for activation by a default worker. No scheduler
+tick is required for the first attempt. The portal checks every second
+after payment is confirmed. Keep the default workers running and monitor
+their queue latency. The scheduler retries if dispatch or activation fails.
+To recover
 a checkout left pending by an earlier reconciliation error, use
 **Reconcile Payment** on that checkout after deploying the fix. Do not start
 a new payment or change its status manually.

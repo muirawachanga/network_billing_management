@@ -30,6 +30,9 @@ a.banner:focus-visible { outline-offset: -.3rem; }
 label { display: block; margin: .75rem 0 .3rem; font-weight: 650; }
 input, select, textarea, button, .button { font: inherit; border-radius: .55rem; padding: .6rem .75rem; min-height: 2.75rem; }
 input, select, textarea { width: 100%; background: #fff; color: inherit; border: 1px solid #77948d; }
+.auto-connect { display: flex; align-items: center; gap: .5rem; }
+.auto-connect input { width: 1.15rem; min-height: 1.15rem; margin: 0; }
+.access-code { display: block; font-size: 1.1rem; font-weight: 700; user-select: all; }
 textarea { resize: vertical; }
 button, .button { display: inline-block; margin-top: .7rem; border: 1px solid transparent; background: #08614e; color: #fff; font-weight: 650; text-decoration: none; }
 button:disabled { background: #e0e9e7; color: #344d47; }

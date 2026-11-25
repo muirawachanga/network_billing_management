@@ -363,6 +363,23 @@ def _refresh(checkout, candidate_id=None, force=False, diagnostics=None):
     return checkout
 
 
+def _refresh_and_dispatch(checkout, *args, commit=False, **kwargs):
+    was_successful = checkout.status == "SUCCESS"
+    checkout = _refresh(checkout, *args, **kwargs)
+    if checkout.backend == "MikroTik" and checkout.status == "SUCCESS" and not was_successful:
+        from network_billing_system import mikrotik_access
+
+        issuance = mikrotik_access.pending_purchase_issuance(checkout.name)
+        # Frappe v14 has no DB after-commit hooks. Commit before calling Redis
+        # so a fast worker sees the issuance and dispatch failure can't undo payment.
+        frappe.db.commit()
+        if issuance:
+            mikrotik_access.dispatch_purchase(issuance)
+    elif commit:
+        frappe.db.commit()
+    return checkout
+
+
 def _record_payment(checkout, resource):
     existing = frappe.db.get_value(
         "Mpesa Transaction Log", {"transaction_code": checkout.mpesa_receipt},
@@ -443,7 +460,7 @@ def check_payment_status(payment_token=None, zone_id=None, recovery_token=None):
     if checkout.zone != zone_id:
         return {"status": "INELIGIBLE", "access_ready": False,
                 "customer_message": "This payment belongs to a different Wi-Fi location."}
-    return _access_response(_refresh(checkout), reveal_mikrotik=True)
+    return _access_response(_refresh_and_dispatch(checkout), reveal_mikrotik=True)
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -459,7 +476,7 @@ def payment_callback(checkout_id, data=None, **kwargs):
         # fetching the provider resource and matching our checkout metadata.
         data = frappe.parse_json(data) if isinstance(data, str) else data
         candidate_id = payment_id((data or {}).get("id"))
-    _refresh(checkout, candidate_id, force=True)
+    _refresh_and_dispatch(checkout, candidate_id, force=True)
     return {"received": True}
 
 
@@ -529,7 +546,7 @@ def reconcile_checkout(checkout_id, provider_payment_id=None):
         frappe.throw("Enter the Kopo Kopo incoming payment request ID to reconcile this checkout.")
     diagnostics = {}
     try:
-        checkout = _refresh(checkout, candidate, force=True, diagnostics=diagnostics)
+        checkout = _refresh_and_dispatch(checkout, candidate, force=True, diagnostics=diagnostics)
     except (ValueError, requests.RequestException) as exc:
         error_log = _log_reconciliation(checkout, diagnostics, str(exc))
         response = _access_response(checkout)
@@ -568,12 +585,15 @@ def reconcile_date_range(from_date, to_date, after_name=None):
             checkout = _lock_checkout(row.name)
             if checkout.status == "SUCCESS" and checkout.backend == "MikroTik":
                 outcome = "already_confirmed" if _access_response(checkout)["access_ready"] else "awaiting_access"
+                frappe.db.commit()
             elif checkout.status == "SUCCESS" and checkout.voucher:
                 outcome = "already_confirmed"
+                frappe.db.commit()
             elif not checkout.provider_payment_id and checkout.status != "SUCCESS":
                 outcome = "missing_provider_id"
+                frappe.db.commit()
             else:
-                checkout = _refresh(checkout, force=True)
+                checkout = _refresh_and_dispatch(checkout, force=True, commit=True)
                 outcome = (
                     "confirmed" if checkout.status == "SUCCESS" and (
                         _access_response(checkout)["access_ready"] if checkout.backend == "MikroTik"
@@ -582,7 +602,6 @@ def reconcile_date_range(from_date, to_date, after_name=None):
                     else "awaiting_access" if checkout.status == "SUCCESS"
                     else checkout.status.lower()
                 )
-            frappe.db.commit()
             results.append({"name": row.name, "outcome": outcome})
         except (requests.RequestException, ValueError, KeyError, frappe.ValidationError):
             frappe.db.rollback()
@@ -609,8 +628,7 @@ def reconcile_pending_payments():
     )
     for name in pending:
         try:
-            _refresh(_lock_checkout(name))
-            frappe.db.commit()
+            _refresh_and_dispatch(_lock_checkout(name), commit=True)
         except (requests.RequestException, ValueError, KeyError, frappe.ValidationError):
             frappe.db.rollback()
             frappe.log_error(frappe.get_traceback(), "Portal payment reconciliation failed")
