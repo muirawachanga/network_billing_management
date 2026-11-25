@@ -117,19 +117,13 @@ app_license = "MIT"
 scheduler_events = {
     "cron": {
         "* * * * *": [
-            "network_billing_system.api.captive_portal.reconcile_pending_payments",
-            "network_billing_system.mikrotik_access.run_provisioning",
-            "network_billing_system.mikrotik_outages.run_monitoring",
-            "network_billing_system.mikrotik_outages.run_notifications",
-            "network_billing_system.mikrotik_grants.run_notifications",
+            "network_billing_system.api.captive_portal.reconcile_pending_payments"
         ],
         "*/5 * * * *": ["network_billing_system.transfer_tasks.run"]
-    },
-    "daily": ["network_billing_system.mikrotik_recovery.prune_expired"],
+    }
 }
 
 after_migrate = ["network_billing_system.transfer_setup.after_migrate"]
-after_request = ["network_billing_system.api.captive_portal.prevent_caching_checkout_proofs"]
 before_migrate = ["network_billing_system.transfer_setup.after_migrate"]
 before_install = "network_billing_system.transfer_setup.after_migrate"
 
