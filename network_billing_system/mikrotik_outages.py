@@ -540,7 +540,7 @@ def _notify(outbox_name):
         return
     accepted = send_message(
         phone,
-        f"Your replacement Wi-Fi access code: {issuance.username}.{password}",
+        f"Your replacement Wi-Fi access code: {access.customer_code(issuance.username, password)}",
         item.idempotency_key,
     )
     if accepted == "retry" and attempts < 6:

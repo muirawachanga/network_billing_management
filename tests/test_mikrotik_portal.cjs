@@ -88,8 +88,8 @@ function portal({
     el, requests, submissions, redirects, storage, timers,
     send: (id, type = "submit", event = {}) => el(id).listeners[type]({ preventDefault() {}, ...event }),
     settled: () => new Promise(resolve => setImmediate(resolve)),
-    tick: () => {
-      const [id, timer] = [...timers].find(([, timer]) => timer.delay === 5000);
+    tick: (delay = 5000) => {
+      const [id, timer] = [...timers].find(([, timer]) => timer.delay === delay);
       timers.delete(id);
       return timer.callback();
     },
@@ -116,6 +116,28 @@ test("manual CHAP login works without billing configuration and uses RFC MD5 byt
   assert.equal(page.el("router-password").value, "");
   assert.equal(page.requests.length, 0);
   assert.equal(page.storage.size, 0);
+});
+
+test("ready checkout shows a shorter code before login, and it can be typed offline", async () => {
+  const code = "2345-6789-ABCD-EFGH-JKLM-NPQR";
+  const response = { ...ready, voucher: "nb2-23456789AB.CDEFGHJKLMNPQR", access_code: code };
+  const page = portal({ responses: {
+    start_payment: { payment_token: "payment-bearer" }, check_payment_status: response,
+  } });
+  await page.settled();
+  page.el("phone").value = "0700000000";
+  await page.send("purchase");
+  assert.equal(page.submissions.length, 0);
+  assert.equal(page.el("access-code-panel").hidden, false);
+  assert.equal(page.el("access-code").textContent, code);
+  assert.ok(!JSON.stringify([...page.storage]).includes(code));
+  page.send("connect", "click");
+  const offline = portal({ settings: null });
+  offline.el("voucher").value = code.toLowerCase().replaceAll("-", " ");
+  offline.send("manual");
+  assert.equal(offline.requests.length, 0);
+  assert.deepEqual(offline.submissions, page.submissions);
+  assert.equal(offline.submissions[0].password, digest("CDEFGHJKLMNPQR"));
 });
 
 test("local HTTP previews only packages and leaves manual login available", async () => {
@@ -196,6 +218,7 @@ test("checkout waits for provisioning, sends a single scoped payment and resumes
   evening.listeners.click();
   assert.equal(day.attributes["aria-pressed"], "false");
   assert.equal(evening.attributes["aria-pressed"], "true");
+  page.el("auto-connect").checked = true;
   page.el("phone").value = "0700000000";
   await page.send("purchase");
   await page.send("purchase");
@@ -207,7 +230,7 @@ test("checkout waits for provisioning, sends a single scoped payment and resumes
     ["check_payment_status", { payment_token: "payment-bearer", zone_id: "test-zone" }],
   ]);
   responses.check_payment_status = ready;
-  await page.tick();
+  await page.tick(1000);
   assert.equal(page.submissions[0].user, "user_1");
   assert.equal(page.submissions[0].password, digest("Pass.2"));
   assert.deepEqual([...page.storage.values()].map(value => JSON.parse(value)), [{ paymentToken: "payment-bearer" }]);
@@ -300,6 +323,9 @@ test("pasted payment recovery submits only the receipt and original checkout tok
   responses.recover_mikrotik_payment = ready;
   await page.send("recovery-check", "click");
   assert.equal(page.el("recovery-connect").hidden, false);
+  assert.equal(page.el("recovery-code").textContent, ready.voucher);
+  assert.equal(page.submissions.length, 0);
+  page.send("recovery-connect", "click");
   page.send("access-tab", "click");
   assert.equal(page.el("recovery").hidden, true);
   assert.equal(page.el("access-panel").hidden, false);

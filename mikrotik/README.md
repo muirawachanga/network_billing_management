@@ -296,7 +296,7 @@ access before leaving Safe Mode. To close the pilot listener, run
 3. Connect a guest device, open the captive sign-in page, and complete a
    sandbox payment. Wait for access to be ready. Then test reconnecting
    with the issued code while Frappe is unreachable. The custom form takes
-   a single `username.password` code, not a separate username and password.
+   a single Wi-Fi access code, not a separate username and password.
    For a local test with the wizard user, enter its HotSpot username and
    password in that same format.
 
@@ -447,14 +447,20 @@ response envelope.
 | --- | --- | --- |
 | `get_packages` | — | Server package list with IDs, prices, and availability |
 | `start_payment` | `phone`, `package_id` | `payment_token` |
-| `check_payment_status` | `payment_token` | Payment `status`, MikroTik `access_state`, `access_ready`, and `voucher` when ready |
-| `recover_mikrotik_payment` | `receipt`, original `payment_token` | Status of the matching verified purchase, and `voucher` only when ready |
+| `check_payment_status` | `payment_token` | Payment `status`, MikroTik `access_state`, `access_ready`, and `voucher` / display `access_code` when ready |
+| `recover_mikrotik_payment` | `receipt`, original `payment_token` | Status of the matching verified purchase, and `voucher` / display `access_code` only when ready |
 | `get_mikrotik_banners` | — | Published tiles for this zone |
 
 The router login is a local POST. Only `READY` with boolean `access_ready`
-and a usable `username.password` voucher can unlock automatic sign-in. The
-first dot is the separator; the password can contain dots. Manual login uses
-that same format and does not contact Frappe. The portal never substitutes a
+and a usable voucher can unlock sign-in. By default customers see their
+access code before choosing **Connect to Wi-Fi**; they can opt into automatic
+sign-in before starting payment. New codes use 24 letters/digits in groups
+of four. Manual login accepts them with or without separators and regardless
+of case. Existing `username.password` codes still work unchanged. Manual
+sign-in does not contact Frappe. Upload the updated router bundle before
+deploying the server change so customers can enter the new format, including
+new codes sent by the existing complimentary and replacement SMS flows.
+The portal never substitutes a
 raw password for a missing or malformed CHAP challenge on HTTP. A bad router
 destination leaves the user on the connected page with a local status link.
 
@@ -472,7 +478,7 @@ tab opens by default when online checkout is not configured.
 Paste the M-Pesa confirmation message or enter its receipt in the same
 browser tab where you started checkout. Only the extracted receipt and the
 checkout token go to Frappe, not the SMS body. Frappe matches the verified
-payment and reconnects the customer when access is ready. No SMS
+payment and lets the customer save the code and reconnect when access is ready. No SMS
 verification is sent; without the original tab, contact staff.
 
 Available Wi-Fi packages appear as selectable tiles with prices; the first

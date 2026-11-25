@@ -182,7 +182,7 @@ def _send(item, client, now):
         return
     try:
         dispatch, sufficient = client.quote(
-            grant.recipient, f"Your complimentary Wi-Fi code: {issuance.username}.{password}",
+            grant.recipient, f"Your complimentary Wi-Fi code: {access.customer_code(issuance.username, password)}",
         )
     except NotifyError as error:
         _retry(item, now, str(error), limit=6)

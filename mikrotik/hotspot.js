@@ -47,8 +47,15 @@
   }
 
   function splitVoucher(voucher) {
-    if (typeof voucher !== "string" || /[\x00-\x20\x7f]/.test(voucher)) return null;
+    if (typeof voucher !== "string") return null;
     const dot = voucher.indexOf(".");
+    if (dot === -1) {
+      const code = voucher.replace(/[ -]/g, "").toUpperCase();
+      return /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{24}$/.test(code)
+        ? { username: "nb2-" + code.slice(0, 10), password: code.slice(10) }
+        : null;
+    }
+    if (/[\x00-\x20\x7f]/.test(voucher)) return null;
     return dot > 0 && dot < voucher.length - 1
       ? { username: voucher.slice(0, dot), password: voucher.slice(dot + 1) }
       : null;

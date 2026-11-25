@@ -41,7 +41,7 @@
   if (window.Hotspot) {
     submit("manual", () => {
       const credentials = Hotspot.splitVoucher(get("voucher").value.trim());
-      if (!credentials) return message("login-message", "Enter an access code in username.password format.");
+      if (!credentials) return message("login-message", "Check your Wi-Fi access code and try again.");
       get("voucher").value = "";
       autoConnect = false;
       logIn(credentials);
@@ -115,6 +115,7 @@
   let selectedPackage = null;
   let recoveryReceipt = null;
   let credentials = null;
+  let accessCode = "";
   let recoveryReady = false;
   let pollTimer;
   let pollUntil = 0;
@@ -141,6 +142,7 @@
     }
     get("check").hidden = !statusFields();
     get("check").disabled = busy;
+    get("auto-connect").disabled = locked;
     get("connect").hidden = !credentials;
     get("connect").disabled = busy;
     get("reload-packages").disabled = busy;
@@ -149,6 +151,10 @@
     get("recovery-check").disabled = busy;
     get("recovery-connect").hidden = !recoveryReady;
     get("recovery-connect").disabled = busy;
+    get("access-code-panel").hidden = !accessCode;
+    message("access-code", accessCode);
+    get("recovery-code-panel").hidden = !recoveryReady;
+    message("recovery-code", recoveryReady ? accessCode : "");
     get("billing-loader").hidden = !busy && !pollTimer;
   }
 
@@ -206,16 +212,16 @@
     }
   }
 
-  function schedulePoll() {
+  function schedulePoll(delay) {
     pollTimer = setTimeout(() => {
       pollTimer = null;
-      return busy ? schedulePoll() : run(checkStatus);
-    }, 5000);
+      return busy ? schedulePoll(delay) : run(checkStatus);
+    }, delay);
   }
 
-  function pollAgain(text) {
+  function pollAgain(text, delay = 5000) {
     const polling = Date.now() < pollUntil;
-    if (polling) schedulePoll();
+    if (polling) schedulePoll(delay);
     billing(text + (polling ? "" : " Use Check access status to try again. Do not pay again."));
     if (recoveryReceipt) {
       recovery(text + (polling ? " Do not pay again." : " Use Check recovery status to try again. Do not pay again."));
@@ -238,6 +244,7 @@
     const fields = statusFields();
     if (!fields) return;
     credentials = null;
+    accessCode = "";
     recoveryReady = false;
     try {
       const recovering = !!recoveryReceipt;
@@ -254,6 +261,7 @@
             return;
           }
           billing("Wi-Fi access is ready.");
+          accessCode = result.access_code || result.voucher;
           recoveryReady = recovering;
           if (recovering) recovery("Payment matched. Wi-Fi access is ready.");
           recoveryReceipt = null;
@@ -261,7 +269,7 @@
           autoConnect = false;
           return;
         case "PROVISIONING":
-          pollAgain("Payment confirmed. Wi-Fi access is being prepared.");
+          pollAgain("Payment confirmed. Wi-Fi access is being prepared.", 1000);
           return;
         case "EXPIRED":
           if (recovering) recovery("This Wi-Fi access has expired.");
@@ -319,6 +327,7 @@
     const packageId = selectedPackage;
     const phone = get("phone").value.trim();
     if (checkout || !phone || !packages.get(packageId)?.available) return;
+    const connectAutomatically = get("auto-connect").checked;
     // A timeout or reload during STK initiation must not silently enable another purchase.
     saveCheckout({ paymentToken: null });
     get("phone").value = "";
@@ -327,7 +336,7 @@
       const result = await post("start_payment", { phone, package_id: packageId });
       if (!usableToken(result?.payment_token)) throw new Error("Missing payment token");
       saveCheckout({ paymentToken: result.payment_token });
-      autoConnect = true;
+      autoConnect = connectAutomatically;
       await startPolling();
     } catch {
       billing(uncertain);
@@ -343,7 +352,7 @@
     }
     recoveryReceipt = receipt;
     recovery("Checking your payment…");
-    autoConnect = true;
+    autoConnect = false;
     await startPolling();
   }));
 

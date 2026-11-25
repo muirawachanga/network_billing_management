@@ -36,12 +36,17 @@
           <div id="payment-controls">
             <label for="phone">M-Pesa phone number</label>
             <input id="phone" type="tel" required>
+            <label class="auto-connect"><input id="auto-connect" type="checkbox"> Connect automatically after payment</label>
             <button id="pay" disabled>Send payment request</button>
           </div>
         </form>
         <p id="package-message" role="status"></p>
         <button id="reload-packages" type="button" hidden>Reload packages</button>
         <button id="check" type="button" hidden>Check access status</button>
+        <div id="access-code-panel" hidden>
+          <p>Save this Wi-Fi code for signing in again without paying.</p>
+          <code id="access-code" class="access-code" dir="ltr"></code>
+        </div>
         <button id="connect" type="button" hidden>Connect to Wi-Fi</button>
       </div>
     </section>
@@ -65,6 +70,10 @@
         <button id="recover-payment">Recover access</button>
       </form>
       <button id="recovery-check" type="button" hidden>Check recovery status</button>
+      <div id="recovery-code-panel" hidden>
+        <p>Save this Wi-Fi code for signing in again without paying.</p>
+        <code id="recovery-code" class="access-code" dir="ltr"></code>
+      </div>
       <button id="recovery-connect" type="button" hidden>Connect to Wi-Fi</button>
       <p id="recovery-message" role="status"></p>
     </section>

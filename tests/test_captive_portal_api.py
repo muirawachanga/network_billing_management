@@ -203,7 +203,17 @@ class TestCaptivePortalAPI(unittest.TestCase):
         self.api._record_payment = MagicMock()
         access = types.ModuleType("network_billing_system.mikrotik_access")
         access.create_issuance = MagicMock()
-        with patch.dict(sys.modules, {access.__name__: access}), patch.object(
+        access.pending_purchase_issuance = MagicMock(return_value="issuance-1")
+
+        def verify_committed(issuance):
+            self.frappe.db.commit.assert_called_once()
+            self.api._record_payment.assert_called_once()
+            self.assertEqual(self.checkout.status, "SUCCESS")
+
+        access.dispatch_purchase = MagicMock(side_effect=verify_committed)
+        with patch.dict(sys.modules, {access.__name__: access}), patch(
+            "network_billing_system.mikrotik_access", access, create=True
+        ), patch.object(
             self.api, "confirmed_payment", side_effect=[
                 ValueError("Provider metadata mismatch"),
                 {"status": "SUCCESS", "receipt": "QWE123ABC", "resource": {}},
@@ -212,13 +222,36 @@ class TestCaptivePortalAPI(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "metadata mismatch"):
                 self.api.payment_callback(self.checkout.name, {"status": "SUCCESS"})
             access.create_issuance.assert_not_called()
+            access.dispatch_purchase.assert_not_called()
+            self.frappe.db.commit.assert_not_called()
             self.assertEqual(self.checkout.status, "PENDING")
             self.api.payment_callback(self.checkout.name)
             self.api.payment_callback(self.checkout.name)
         access.create_issuance.assert_called_once_with(self.checkout)
+        access.dispatch_purchase.assert_called_once_with("issuance-1")
         self.api._record_payment.assert_called_once()
         self.assertEqual(self.checkout.status, "SUCCESS")
         self.frappe.db.sql.assert_not_called()
+
+    def test_mikrotik_status_poll_can_dispatch_without_waiting_for_callback(self):
+        self.checkout.update(backend="MikroTik", voucher=None)
+        self.api._lock_checkout = MagicMock(return_value=self.checkout)
+        self.api._checkout_for_token = MagicMock(return_value=self.checkout.name)
+        self.api._record_payment = MagicMock()
+        self.api._access_response = MagicMock(return_value={"access_ready": False})
+        access = types.ModuleType("network_billing_system.mikrotik_access")
+        access.create_issuance = MagicMock()
+        access.pending_purchase_issuance = MagicMock(return_value="issuance-1")
+        access.dispatch_purchase = MagicMock()
+        with patch.dict(sys.modules, {access.__name__: access}), patch(
+            "network_billing_system.mikrotik_access", access, create=True
+        ), patch.object(
+            self.api, "confirmed_payment", return_value={"status": "SUCCESS", "receipt": "QWE123ABC", "resource": {}},
+        ):
+            self.api.check_payment_status("original-token", zone_id=self.checkout.zone)
+            self.api.check_payment_status("original-token", zone_id=self.checkout.zone)
+        self.frappe.db.commit.assert_called_once()
+        access.dispatch_purchase.assert_called_once_with("issuance-1")
 
     def test_mikrotik_receipt_alone_does_not_use_credential_response(self):
         self.checkout.update(backend="MikroTik", status="SUCCESS", voucher=None)
