@@ -118,7 +118,11 @@ def _create_issuance(key, router, seconds, **source):
         "password": password, "fingerprint": fingerprint, "issuance_key": key,
         "next_attempt_at": now_datetime(),
     }).insert(ignore_permissions=True)
-    frappe.db.after_commit.add(partial(_enqueue_provision, doc.name))
+    after_commit = getattr(frappe.db, "after_commit", None)
+    if after_commit is not None:
+        after_commit.add(partial(_enqueue_provision, doc.name))
+    # Frappe v14 has no callback hook. Its scheduler dispatches the committed
+    # issuance without making the checkout request depend on Redis.
     return doc
 
 

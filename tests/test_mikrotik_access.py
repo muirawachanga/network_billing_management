@@ -42,6 +42,21 @@ class MikroTikAccessTest(unittest.TestCase):
         self.assertIs(self.access.create_issuance(self.checkout), issued)
         self.frappe.db.after_commit.add.assert_called_once()
 
+    def test_v14_keeps_issuance_pending_for_scheduler_without_an_after_commit_hook(self):
+        del self.frappe.db.after_commit
+        issued = self.access.create_issuance(self.checkout)
+        self.assertEqual(issued.state, "Pending")
+        self.assertEqual(issued.next_attempt_at, self.now)
+        self.frappe.enqueue.assert_not_called()
+        self.frappe.db.commit.assert_not_called()
+
+        self.frappe.get_all.return_value = [issued.name]
+        self.access.run_provisioning()
+        self.assertEqual(self.frappe.get_all.call_args.kwargs["filters"], {
+            "state": "Pending", "next_attempt_at": ["<=", self.now],
+        })
+        self.frappe.enqueue.assert_called_once_with(self.access.provision, issuance_name=issued.name)
+
     def test_ambiguous_confirmation_retries_same_identity_with_backoff(self):
         from network_billing_system import routeros
         issuance = MagicMock(state="Pending", next_attempt_at=self.now, attempts=0,

@@ -147,6 +147,12 @@ Keep live sales off until these checks pass on the target router:
 
 ## Operations and rollback
 
+On Frappe v14, the scheduler picks up committed pending issuances on its
+next provisioning run; keep the scheduler and workers running. To recover
+a checkout left pending by an earlier reconciliation error, use
+**Reconcile Payment** on that checkout after deploying the fix. Do not start
+a new payment or change its status manually.
+
 Watch for paid **Portal Checkout** records with **MikroTik Issuance** still
 pending and growing attempts, **MikroTik Outage Incident** records requiring
 evidence, and **MikroTik Notification Outbox** retries. Alert on repeated
